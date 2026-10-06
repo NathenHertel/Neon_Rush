@@ -1,58 +1,53 @@
+// ---------- DONT REMOVE ----------
+#pragma comment(lib, "user32.lib")
+#pragma comment(lib, "gdi32.lib")
+#pragma comment(lib, "shell32.lib")
+#pragma comment(lib, "opengl32.lib")
+
 #include "Rendering.h"
+#include "raylib.h"
+#include "raymath.h"
 
-#include <SDL.h>
 
+// ---------- CONSTANTS ----------
+const int screenWidth = 1280;
+const int screenHeight = 720;
 
-// -------- Constansts -------------
-namespace
-{
-	constexpr int WINDOW_WIDTH = 1280;
-	constexpr int WINDOW_HEIGHT = 720;
-
-	bool appRunning = true;
-}
+float speed = 10.0f;
+float size = 45.0f;
+float radius = 30.0f;
 
 void RunWindow()
 {
-	// ------------ Error Check -----------
-	if (!SDL_Init(SDL_INIT_VIDEO))
+	InitWindow(screenWidth, screenHeight, "Neon Rush");
+	
+	Vector2 ballPos = { screenWidth / 2, screenHeight / 2 };
+
+	SetTargetFPS(60);
+
+	while (!WindowShouldClose())
 	{
-		SDL_Log("SDL Failed to start: %s", SDL_GetError());
-		appRunning = false;
-		return;
+		// ---------- UPDATE ----------
+
+		if (IsKeyDown(KEY_RIGHT)) ballPos.x += speed;
+		if (IsKeyDown(KEY_LEFT)) ballPos.x -= speed;
+		if (IsKeyDown(KEY_UP)) ballPos.y -= speed;
+		if (IsKeyDown(KEY_DOWN)) ballPos.y += speed;
+
+		ballPos.x = Clamp(ballPos.x, radius, screenWidth - radius);
+		ballPos.y = Clamp(ballPos.y, radius, screenHeight - radius);
+
+		// ---------- RENDER ----------
+		BeginDrawing();
+
+		ClearBackground(RAYWHITE);
+
+		DrawCircleV(ballPos, radius, MAROON);
+
+		EndDrawing();
 	}
 
-	// ------------ Error Check -----------
-	SDL_Window* window = SDL_CreateWindow("NEON RUSH", WINDOW_WIDTH, WINDOW_HEIGHT, 0);
-	if (!window)
-	{
-		SDL_Log("SDL Crashed at window creation: %s", SDL_GetError());
-		SDL_Quit();
-		appRunning = false;
-		return;
-	}
+	CloseWindow();
 
-	// ------------ Error Check -----------
-	SDL_Renderer* renderer = SDL_CreateRenderer(window, nullptr);
-	if (!renderer)
-	{
-		SDL_Log("SDL Crashed at renderer creation: %s", SDL_GetError());
-		SDL_DestroyWindow(window);
-		SDL_Quit();
-		appRunning = false;
-		return;
-	}
-
-	// ---------- Render -----------
-	while (appRunning)
-	{
-		SDL_RenderPresent(renderer);
-
-		SDL_Delay(16);
-	}
-
-	// ------------ Cleanup -------------
-	SDL_DestroyRenderer(renderer);
-	SDL_DestroyWindow(window);
-	SDL_Quit();
+	return;
 }
