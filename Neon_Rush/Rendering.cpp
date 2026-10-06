@@ -2,6 +2,8 @@
 
 #include <SDL.h>
 
+
+// -------- Constansts -------------
 namespace
 {
 	constexpr int WINDOW_WIDTH = 1280;
@@ -12,6 +14,7 @@ namespace
 
 void RunWindow()
 {
+	// ------------ Error Check -----------
 	if (!SDL_Init(SDL_INIT_VIDEO))
 	{
 		SDL_Log("SDL Failed to start: %s", SDL_GetError());
@@ -19,6 +22,7 @@ void RunWindow()
 		return;
 	}
 
+	// ------------ Error Check -----------
 	SDL_Window* window = SDL_CreateWindow("NEON RUSH", WINDOW_WIDTH, WINDOW_HEIGHT, 0);
 	if (!window)
 	{
@@ -28,6 +32,7 @@ void RunWindow()
 		return;
 	}
 
+	// ------------ Error Check -----------
 	SDL_Renderer* renderer = SDL_CreateRenderer(window, nullptr);
 	if (!renderer)
 	{
@@ -38,6 +43,7 @@ void RunWindow()
 		return;
 	}
 
+	// ---------- Render -----------
 	while (appRunning)
 	{
 		SDL_RenderPresent(renderer);
@@ -45,6 +51,7 @@ void RunWindow()
 		SDL_Delay(16);
 	}
 
+	// ------------ Cleanup -------------
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(window);
 	SDL_Quit();
