@@ -1,7 +1,13 @@
 #include "Rendering.h"
 
-#include <SDL.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <iostream>
 
+
+// ---------- CONSTANTS ----------
+const int screenWidth = 1280;
+const int screenHeight = 720;
 
 // -------- Constansts -------------
 namespace
@@ -46,7 +52,42 @@ void RunWindow()
 	// ---------- Render -----------
 	while (appRunning)
 	{
-		SDL_RenderPresent(renderer);
+		// ---------- UPDATE ----------
+		float deltaTime = GetFrameTime();
+		// ---------- MOVEMENT ----------
+
+		// ----- RIGHT -----
+		if (IsKeyDown(KEY_RIGHT)) ballPos.x += speed;
+		else if (IsKeyDown(KEY_D)) ballPos.x += speed;
+
+		// ----- LEFT -----
+		if (IsKeyDown(KEY_LEFT)) ballPos.x -= speed;
+		else if (IsKeyDown(KEY_A)) ballPos.x -= speed;
+
+		// ----- UP -----
+		if (IsKeyDown(KEY_UP)) ballPos.y -= speed;
+		else if (IsKeyDown(KEY_W)) ballPos.y -= speed;
+
+		// ----- DOWN -----
+		if (IsKeyDown(KEY_DOWN)) ballPos.y += speed;
+		else if (IsKeyDown(KEY_S)) ballPos.y += speed;
+
+		ballPos.x = Clamp(ballPos.x, radius, screenWidth - radius);
+		ballPos.y = Clamp(ballPos.y, radius, screenHeight - radius);
+
+
+		// ---------- AI MOVEMENT ----------
+
+		agent->MoveToPlayer(ballPos, 100.0f, deltaTime);
+		
+		// ---------- RENDER ----------
+		BeginDrawing();
+
+		ClearBackground(RAYWHITE);
+
+		DrawCircleV(ballPos, radius, MAROON);
+
+		agent->Draw();
 
 		SDL_Delay(16);
 	}
