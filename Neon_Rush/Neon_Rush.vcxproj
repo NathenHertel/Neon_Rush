@@ -151,12 +151,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="AI.cpp" />
+    <ClCompile Include="Agent.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Rendering.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="AI.h" />
+    <ClInclude Include="Agent.h" />
     <ClInclude Include="Rendering.h" />
   </ItemGroup>
   <ItemGroup>

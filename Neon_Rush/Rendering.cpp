@@ -7,7 +7,7 @@
 #include "Rendering.h"
 #include "raylib.h"
 #include "raymath.h"
-#include "AI.h"
+#include "Agent.h"
 
 
 // ---------- CONSTANTS ----------
@@ -23,7 +23,7 @@ AI_Agent* agent;
 void RunWindow()
 {
 	InitWindow(screenWidth, screenHeight, "Neon Rush");
-	
+
 	Vector2 ballPos = { screenWidth / 2, screenHeight / 2 };
 
 	agent = new AI_Agent({ 150, 150 }, 20.0f, BLUE);
@@ -33,6 +33,8 @@ void RunWindow()
 	while (!WindowShouldClose())
 	{
 		// ---------- UPDATE ----------
+
+		float deltaTime = GetFrameTime();
 
 		// ---------- MOVEMENT ----------
 
@@ -58,7 +60,7 @@ void RunWindow()
 
 		// ---------- AI MOVEMENT ----------
 
-		
+		agent->MoveToPlayer(ballPos, 100.0f, deltaTime);
 
 		// ---------- RENDER ----------
 		BeginDrawing();
