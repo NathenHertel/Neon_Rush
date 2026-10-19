@@ -26,11 +26,15 @@ int score = 0;
 void RunWindow()
 {
     InitWindow(screenWidth, screenHeight, "Neon Rush");
+    InitAudioDevice();
+
+    SetExitKey(KEY_NULL);
 
     Player player;
+    Sound EnemyVoice = LoadSound("spongebob-hi-how-are-ya-.mp3");
 
     player._pos = { screenWidth / 2, screenHeight / 2 };
-    player._radius = 30.0f;
+    player._radius = 40.0f;
 
     // ----------- RANDOM GENERATION FOR ENEMY PLACEMENT ----------
     std::random_device rd;
@@ -43,43 +47,33 @@ void RunWindow()
     std::vector<AI_Agent> Enemies;
     std::vector<Bullet> Bullets;
 
+    std::vector<Sound> EnemySounds;
+
     // ---------- TIMERS ----------
     float spawnTimer = 0.0f;
-    const float spawnInterval = 1.0f;
+    const float spawnInterval = 0.5f;
 
     float fireTimer = 0.0f;
     const float fireInterval = 1.0f;
 
-    float dmgTimer = 0.0f;
-    const float dmgInterval = 2.0f;
+    float dmgTimer = 0.5f;
+    const float dmgInterval = 0.5f;
 
     float angle = 0.0f;
+
+    bool gameOver = false;
+    bool menuOpen = false;
 
     SetTargetFPS(60);
 
     // ---------- GAME LOOP -----------
     while (!WindowShouldClose())
     {
-        // ----- UPDATE TIMERS -----
         float deltaTime = GetFrameTime();
-        spawnTimer += deltaTime;
-        fireTimer += deltaTime;
-        dmgTimer += deltaTime;
 
-        // ---------- SPAWN ENEMY ----------
-
-        if (spawnTimer >= spawnInterval && Enemies.size() <= 5 - 1)
+        if (IsKeyPressed(KEY_ESCAPE))
         {
-            AI_Agent newAgent;
-
-            newAgent.SetPos({ disX(gen), disY(gen) });
-            newAgent.maxSpeed = 150.0f;
-            newAgent._radius = 20.0f;
-            newAgent.active = true;
-
-            Enemies.push_back(newAgent);
-
-            spawnTimer = 0.0f;
+            menuOpen = !menuOpen;
         }
 
 #pragma region Triangle
@@ -114,196 +108,217 @@ void RunWindow()
 
 #pragma endregion
 
+        if (gameOver)
+        {
+            if (IsKeyPressed(KEY_R))
+            {
+                gameOver = false;
+                score = 0;
+                Enemies.clear();
+                Bullets.clear();
+                player._pos = { screenWidth / 2, screenHeight / 2 };
+                player.health = player.baseHealth;
+                player.levelUp = false;
+                player._exp = 0.0f;
+                player.requiredExp = 100.0f;
+                spawnTimer = 0.0f;
+                fireTimer = 0.0f;
+                dmgTimer = dmgInterval;
+            }
+        }
+        else if (player.levelUp)
+        {
+            if (IsKeyPressed(KEY_M))
+            {
+                player.health = player.baseHealth;
+                player.levelUp = false;
+            }
+        }
+        else if (menuOpen)
+        {
+
+        }
+        else
+        {
+            // ----- UPDATE TIMERS -----
+            spawnTimer += deltaTime;
+            fireTimer += deltaTime;
+            dmgTimer += deltaTime;
+
+            // ---------- SPAWN ENEMY ----------
+
+            if (spawnTimer >= spawnInterval && Enemies.size() <= 5 - 1)
+            {
+                AI_Agent newAgent;
+
+                newAgent.SetPos({ disX(gen), disY(gen) });
+                newAgent.maxSpeed = 150.0f;
+                newAgent._radius = 20.0f;
+                newAgent.active = true;
+
+                Enemies.push_back(newAgent);
+
+                spawnTimer = 0.0f;
+            }
+
 #pragma region Movement
-        // ---------- MOVEMENT ----------
+            // ---------- MOVEMENT ----------
 
-        // ----- RIGHT -----
-        if (IsKeyDown(KEY_RIGHT)) player._pos.x += speed;
-        else if (IsKeyDown(KEY_D)) player._pos.x += speed;
+            // ----- RIGHT -----
+            if (IsKeyDown(KEY_RIGHT)) player._pos.x += speed;
+            else if (IsKeyDown(KEY_D)) player._pos.x += speed;
 
-        // ----- LEFT -----
-        if (IsKeyDown(KEY_LEFT)) player._pos.x -= speed;
-        else if (IsKeyDown(KEY_A)) player._pos.x -= speed;
+            // ----- LEFT -----
+            if (IsKeyDown(KEY_LEFT)) player._pos.x -= speed;
+            else if (IsKeyDown(KEY_A)) player._pos.x -= speed;
 
-        // ----- UP -----
-        if (IsKeyDown(KEY_UP)) player._pos.y -= speed;
-        else if (IsKeyDown(KEY_W)) player._pos.y -= speed;
+            // ----- UP -----
+            if (IsKeyDown(KEY_UP)) player._pos.y -= speed;
+            else if (IsKeyDown(KEY_W)) player._pos.y -= speed;
 
-        // ----- DOWN -----
-        if (IsKeyDown(KEY_DOWN)) player._pos.y += speed;
-        else if (IsKeyDown(KEY_S)) player._pos.y += speed;
-
+            // ----- DOWN -----
+            if (IsKeyDown(KEY_DOWN)) player._pos.y += speed;
+            else if (IsKeyDown(KEY_S)) player._pos.y += speed;
 #pragma endregion
 
 #pragma region Shooting
-        // ----- SHOOT -----
-        if (IsMouseButtonDown(MOUSE_LEFT_BUTTON))
-        {
-            // ----- Checks if it can fire yet -----
-            if (fireTimer >= fireInterval)
+            // ----- SHOOT -----
+            if (IsMouseButtonDown(MOUSE_LEFT_BUTTON))
             {
-                Bullet newBullet;
-                newBullet._pos.x = v1.x;
-                newBullet._pos.y = v1.y;
-                newBullet._radius = 5.0f;
-
-                float dx = mousePos.x - pivot.x;
-                float dy = mousePos.y - pivot.y;
-
-                float length = sqrtf(dx * dx + dy * dy);
-                float dirX = dx / length;
-                float dirY = dy / length;
-
-                Vector2 vel = { (dirX * 500.0f), (dirY * 500.0f) };
-
-                newBullet._vel = vel;
-
-                newBullet.Update(deltaTime, screenWidth, screenHeight);
-
-                Bullets.push_back(newBullet);
-
-                fireTimer = 0.0f;
+                // ----- Checks if it can fire yet -----
+                if (fireTimer >= fireInterval)
+                {
+                    player.StartBurst(fireTimer);
+                }
             }
-        }
-        else if (IsKeyDown(KEY_SPACE))
-        {
-            if (fireTimer >= fireInterval)
+            else if (IsKeyDown(KEY_SPACE))
             {
-                Bullet newBullet;
-                newBullet._pos.x = v1.x;
-                newBullet._pos.y = v1.y;
-                newBullet._radius = 5.0f;
-
-                float dx = mousePos.x - pivot.x;
-                float dy = mousePos.y - pivot.y;
-
-                float length = sqrtf(dx * dx + dy * dy);
-                float dirX = dx / length;
-                float dirY = dy / length;
-
-                Vector2 vel = { (dirX * 500.0f), (dirY * 500.0f) };
-
-                newBullet._vel = vel;
-
-                newBullet.Update(deltaTime, screenWidth, screenHeight);
-
-                Bullets.push_back(newBullet);
-
-                fireTimer = 0.0f;
+                if (fireTimer >= fireInterval)
+                {
+                    player.StartBurst(fireTimer);
+                }
             }
-        }
 
-        for (auto& Bullet : Bullets)
-        {
-            Bullet.Update(deltaTime, screenWidth, screenHeight);
-        }
+            player.UpdateShooting(mousePos, pivot, Bullets, v1, deltaTime, fireTimer,
+                screenWidth, screenHeight);
 
-        player._pos.x = Clamp(player._pos.x, player._radius, screenWidth - player._radius);
-        player._pos.y = Clamp(player._pos.y, player._radius, screenHeight - player._radius);
+            for (auto& Bullet : Bullets)
+            {
+                Bullet.Update(deltaTime, screenWidth, screenHeight);
+            }
+
+            player._pos.x = Clamp(player._pos.x, player._radius, screenWidth - player._radius);
+            player._pos.y = Clamp(player._pos.y, player._radius, screenHeight - player._radius);
 
 #pragma endregion
 
 #pragma region AI Movement
-        // ---------- AI MOVEMENT ----------
+            // ---------- AI MOVEMENT ----------
 
-        for (auto& AI_Agent : Enemies)
-        {
-            if (!AI_Agent.active) continue;
-            AI_Agent.MoveToPlayer(player._pos, 100, deltaTime);
-        }
-
-        for (size_t i = 0; i < Enemies.size(); ++i)
-        {
-            for (size_t j = i + 1; j < Enemies.size(); ++j)
+            for (auto& AI_Agent : Enemies)
             {
-                AI_Agent& a = Enemies[i];
-                AI_Agent& b = Enemies[j];
-
-                Vector2 AIpos1 = a.GetPos();
-                Vector2 AIpos2 = b.GetPos();
-
-                if (a.CheckOverlapWithOtherAgent(AIpos1, AIpos2, a._radius, b._radius))
-                {
-                    a.CollisionWithOtherAgent(AIpos1, AIpos2, a._radius, b._radius);
-
-                    a.SetPos(AIpos1);
-                    b.SetPos(AIpos2);
-                }
+                if (!AI_Agent.active) continue;
+                AI_Agent.MoveToPlayer(player._pos, 350, deltaTime);
             }
-        }
 
-#pragma endregion
-
-#pragma region Bullets
-        // ---------- BULLET CHECK IF HIT ----------
-
-        for (int i = 0; i < Bullets.size(); i++)
-        {
-            if (Bullets[i]._disabled) continue;
-
-            for (int j = 0; j < Enemies.size(); j++)
-            {
-                if (!Enemies[j].active) continue;
-
-                if (Enemies[j].CheckOverlapWithOtherAgent(Enemies[j]._Pos, Bullets[i]._pos,
-                                                          Enemies[j]._radius, Bullets[i]._radius))
-                {
-                    Enemies[j].active = false;
-                    Bullets[i]._disabled = true;
-
-                    ++score;
-                    break;
-                }
-            }
-        }
-
-        // ---------- BULLET HIT CLEANUP ----------
-
-        Enemies.erase
-        (
-            std::remove_if(Enemies.begin(), Enemies.end(), [](const AI_Agent& e) { return !e.active; }),
-            Enemies.end()
-        );
-
-        Bullets.erase
-        (
-            std::remove_if(Bullets.begin(), Bullets.end(), [](const Bullet& b) { return b._disabled; }),
-            Bullets.end()
-        );
-
-#pragma endregion
-
-#pragma region Enemy Damage
-        // ---------- CHECK IF ENEMY HIT PLAYER ----------
-
-        if (dmgTimer >= dmgInterval)
-        {
             for (size_t i = 0; i < Enemies.size(); ++i)
             {
-                AI_Agent& a = Enemies[i];
-
-                Vector2 AIpos1 = a.GetPos();
-
-                if (a.CheckOverlapWithOtherAgent(AIpos1, player._pos, a._radius, player._radius))
+                for (size_t j = i + 1; j < Enemies.size(); ++j)
                 {
-                    player.setHealth(3);
+                    AI_Agent& a = Enemies[i];
+                    AI_Agent& b = Enemies[j];
 
-                    if (player.health <= 0)
+                    Vector2 AIpos1 = a.GetPos();
+                    Vector2 AIpos2 = b.GetPos();
+
+                    if (a.CheckOverlapWithOtherAgent(AIpos1, AIpos2, a._radius, b._radius))
                     {
-                        CloseWindow();
+                        a.CollisionWithOtherAgent(AIpos1, AIpos2, a._radius, b._radius);
 
-                        return;
+                        a.SetPos(AIpos1);
+                        b.SetPos(AIpos2);
                     }
                 }
             }
 
-            dmgTimer = 0.0f;
-        }
+#pragma endregion
+
+#pragma region Bullets
+            // ---------- BULLET CHECK IF HIT ----------
+
+            for (int i = 0; i < Bullets.size(); i++)
+            {
+                if (Bullets[i]._disabled) continue;
+
+                for (int j = 0; j < Enemies.size(); j++)
+                {
+                    if (!Enemies[j].active) continue;
+
+                    if (Enemies[j].CheckOverlapWithOtherAgent(Enemies[j]._Pos, Bullets[i]._pos,
+                        Enemies[j]._radius, Bullets[i]._radius))
+                    {
+                        Enemies[j].active = false;
+                        Bullets[i]._disabled = true;
+
+                        std::uniform_real_distribution<float> distrib(Enemies[j].minExp, Enemies[j].maxExp);
+                        float exp = distrib(gen);
+
+                        player.LevelUp(exp);
+
+                        ++score;
+                        break;
+                    }
+                }
+            }
+
+            // ---------- BULLET HIT CLEANUP ----------
+
+            Enemies.erase
+            (
+                std::remove_if(Enemies.begin(), Enemies.end(), [](const AI_Agent& e) { return !e.active; }),
+                Enemies.end()
+            );
+
+            Bullets.erase
+            (
+                std::remove_if(Bullets.begin(), Bullets.end(), [](const Bullet& b) { return b._disabled; }),
+                Bullets.end()
+            );
 
 #pragma endregion
 
-        // ---------- RENDER ----------
+#pragma region Enemy Damage
+            // ---------- CHECK IF ENEMY HIT PLAYER ----------
 
+            if (dmgTimer >= dmgInterval)
+            {
+                for (size_t i = 0; i < Enemies.size(); ++i)
+                {
+                    AI_Agent& a = Enemies[i];
+
+                    Vector2 AIpos1 = a.GetPos();
+
+                    if (a.CheckOverlapWithOtherAgent(AIpos1, player._pos, a._radius, player._radius))
+                    {
+                        player.setHealth(3);
+
+                        if (player.health <= 0)
+                        {
+                            PlaySound(EnemyVoice);
+                            gameOver = true;
+
+                            break;
+                        }
+                    }
+                }
+
+                dmgTimer = 0.0f;
+            }
+
+#pragma endregion
+        }
+
+        // ---------- RENDER ----------
 
         BeginDrawing();
 
@@ -323,11 +338,38 @@ void RunWindow()
         }
 
         DrawRectangle(5, 5, 200, 20, BLACK);
-        DrawText(TextFormat("Score: %d, Health: %d", score, player.health), 6, 6, 20, GREEN);
+        DrawText(TextFormat("Score: %d, Health: %d/%d", score, player.health, player.baseHealth), 6, 6, 20, GREEN);
+
+        if (gameOver)
+        {
+            DrawRectangle(0, 0, screenWidth, screenHeight, Fade(BLACK, 0.6f));
+            DrawText("GAME OVER", screenWidth / 2 - 120, screenHeight / 2 - 40, 50, RED);
+            DrawText("Press R to Restart", screenWidth / 2 - 110, screenHeight / 2 + 20, 24, WHITE);
+        }
+        if (player.levelUp)
+        {
+            DrawRectangle(0, 0, screenWidth, screenHeight, Fade(BLACK, 0.6f));
+            DrawText("Level UP - press M", screenWidth / 2 - 130, screenHeight / 2, 30, WHITE);
+        }
+        if (menuOpen)
+        {
+            const char* text = "Settings";
+            int fontSize = 30;
+
+            int textWidth = MeasureText(text, fontSize);
+
+            int x = screenWidth / 2 - textWidth / 2;
+            int y = screenHeight / 2 - fontSize / 2;
+
+            DrawRectangle(0, 0, screenWidth, screenHeight, Fade(BLACK, 0.6f));
+            DrawText(text, x, y, fontSize, WHITE);
+        }
 
         EndDrawing();
     }
 
+    UnloadSound(EnemyVoice);
+    CloseAudioDevice();
     CloseWindow();
 
     return;

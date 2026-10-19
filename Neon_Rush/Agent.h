@@ -14,6 +14,11 @@ public:
 	float _radius{ 5.0f };
 	Color _colour{ BLUE };
 	bool active;
+
+	float minExp = 15.0f;
+	float maxExp = 50.0f;
+
+	float expAmount;
 	
 
 	AI_Agent();
