@@ -8,9 +8,18 @@
 class AI_Agent
 {
 public:
-	float maxSpeed{ 50.0f };;
-	Vector2 Accel;
-	Vector2 Vel;
+	// ----- DECLERATIONS -----
+	float maxSpeed{ 50.0f };
+	Vector2 _Pos{ 0.0f, 0.0f };
+	float _radius{ 5.0f };
+	Color _colour{ BLUE };
+	bool active;
+
+	float minExp = 15.0f;
+	float maxExp = 50.0f;
+
+	float expAmount;
+	
 
 	AI_Agent();
 	AI_Agent(Vector2 pos, float radius, Color colour);
@@ -25,8 +34,10 @@ public:
 
 	void MoveToPlayer(Vector2& targetPos, float speed, float deltaTime);
 
+	bool CheckOverlapWithOtherAgent(Vector2& selfPos, Vector2& otherPos, float selfRadius, float otherRadius);
+
+	void CollisionWithOtherAgent(Vector2& selfPos, Vector2& otherPos, float selfRadius, float otherRadius);
+
 private:
-	Vector2 _Pos{ 0.0f, 0.0f };
-	float _radius{ 5.0f };
-	Color _colour{ BLUE };
+
 };
