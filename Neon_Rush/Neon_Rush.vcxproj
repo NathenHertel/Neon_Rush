@@ -84,6 +84,9 @@
     <IncludePath>C:\GameDev\OpenGL\include;C:\GameDev\SDL3\include;C:\GameDev\MathLibrary\include;C:\GameDev\IMGUI\Include;C:\GameDev\IMGUI\Include;$(IncludePath)</IncludePath>
     <LinkIncremental>true</LinkIncremental>
   </PropertyGroup>
+  <PropertyGroup Label="Vcpkg">
+    <VcpkgEnableManifest>true</VcpkgEnableManifest>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -157,6 +160,7 @@
     <ClInclude Include="Player.h" />
     <ClInclude Include="Projectile.h" />
     <ClInclude Include="Rendering.h" />
+    <ClInclude Include="Serialization.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

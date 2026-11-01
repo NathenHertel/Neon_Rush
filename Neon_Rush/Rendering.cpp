@@ -10,6 +10,7 @@
 #include "Agent.h"
 #include "Projectile.h"
 #include "Player.h"
+#include "Serialization.h"
 
 #include <random>
 #include <vector>
@@ -74,6 +75,33 @@ void RunWindow()
         if (IsKeyPressed(KEY_ESCAPE))
         {
             menuOpen = !menuOpen;
+        }
+
+        // ---------- SAVE / LOAD ----------
+        if (IsKeyPressed(KEY_F5))
+        {
+            if (SaveGame("save.json", player, Enemies, Bullets, score))
+                std::cout << "Game saved (health " << player.health << "/" << player.baseHealth
+                << ", " << Enemies.size() << " enemies, "
+                << Bullets.size() << " bullets, score " << score << ")\n";
+            else
+                std::cout << "Save FAILED: could not write save.json\n";
+        }
+
+        if (IsKeyPressed(KEY_F9))
+        {
+            if (LoadGame("save.json", player, Enemies, Bullets, score))
+            {
+                gameOver = false;
+                fireTimer = 0.0f;
+                spawnTimer = 0.0f;
+
+                std::cout << "Game loaded (health " << player.health << "/" << player.baseHealth
+                    << ", " << Enemies.size() << " enemies, "
+                    << Bullets.size() << " bullets, score " << score << ")\n";
+            }
+            else
+                std::cout << "Load FAILED: save.json is missing or invalid\n";
         }
 
 #pragma region Triangle
