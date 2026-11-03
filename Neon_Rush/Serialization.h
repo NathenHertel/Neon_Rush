@@ -98,6 +98,7 @@ inline void to_json(json& j, const Player& p)
         {"pos",               p._pos},
         {"radius",            p._radius},
         {"health",            p.health},
+        {"max health",        p.maxHealth},
         {"level",             p.Level},
         {"amountOfShots",     p.amountOfShots},
         {"masterAmount",      p.masterAmount},
@@ -113,7 +114,8 @@ inline void from_json(const json& j, Player& p)
     // A missing key keeps whatever value the player already has.
     p._pos = j.value("pos", p._pos);
     p._radius = j.value("radius", p._radius);
-    p.health = j.value("health", p.health);;
+    p.health = j.value("health", p.health);
+    p.maxHealth = j.value("maxHealth", p.maxHealth);
     p.Level = j.value("level", p.Level);
     p.amountOfShots = j.value("amountOfShots", p.amountOfShots);
     p.masterAmount = j.value("masterAmount", p.masterAmount);
