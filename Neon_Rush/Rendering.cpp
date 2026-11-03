@@ -17,6 +17,7 @@
 #include <cmath>
 
 // ---------- ENEMY DEATH PARTICLES ----------
+// Each particle remembers its own position, velocity and remaining lifetime.
 struct DeathParticle
 {
     Vector2 position;
@@ -28,10 +29,10 @@ struct DeathParticle
 };
 
 // Tweak these to experiment with the explosion effect.
-constexpr int PARTICLES_PER_KILL = 80;
+constexpr int PARTICLES_PER_KILL = 65;
 constexpr float PARTICLE_MIN_SPEED = 90.0f;
 constexpr float PARTICLE_MAX_SPEED = 420.0f;
-constexpr float PARTICLE_DRAG = 1.4f;
+constexpr float PARTICLE_DRAG = 2.4f;
 
 void SpawnDeathParticles(std::vector<DeathParticle>& particles, Vector2 center,
     std::mt19937& rng)
@@ -40,7 +41,7 @@ void SpawnDeathParticles(std::vector<DeathParticle>& particles, Vector2 center,
     std::uniform_real_distribution<float> speedDist(PARTICLE_MIN_SPEED, PARTICLE_MAX_SPEED);
     std::uniform_real_distribution<float> lifeDist(0.35f, 0.95f);
     std::uniform_real_distribution<float> radiusDist(1.5f, 4.5f);
-    const Color colors[] = { RED,BLUE,GREEN,ORANGE,PURPLE,YELLOW};
+    const Color colors[] = { SKYBLUE, BLUE, VIOLET, PURPLE, PINK, WHITE };
     std::uniform_int_distribution<int> colorDist(0, 5);
 
     for (int i = 0; i < PARTICLES_PER_KILL; ++i)
@@ -105,7 +106,7 @@ void RunWindow()
     Sound EnemyVoice = LoadSound("spongebob-hi-how-are-ya-.mp3");
 
     player._pos = { screenWidth / 2, screenHeight / 2 };
-    player._radius = 60.0f;
+    player._radius = 40.0f;
 
     // ----------- RANDOM GENERATION FOR ENEMY PLACEMENT ----------
     std::random_device rd;
@@ -116,6 +117,7 @@ void RunWindow()
 
     // ---------- VECTORS FOR MULTIPLE OF 1 CLASS ----------
     std::vector<AI_Agent> Enemies;
+    std::vector<AI_Agent> SquareEnemies;
     std::vector<Bullet> Bullets;
     std::vector<DeathParticle> deathParticles;
 
@@ -124,6 +126,10 @@ void RunWindow()
     // ---------- TIMERS ----------
     float spawnTimer = 0.0f;
     const float spawnInterval = 0.5f;
+
+    // Squares spawn independently of the existing circle limit.
+    float squareSpawnTimer = 0.0f;
+    const float squareSpawnInterval = 5.0f;
 
     float fireTimer = 0.0f;
     const float fireInterval = 1.0f;
@@ -187,6 +193,7 @@ void RunWindow()
                 gameOver = false;
                 score = 0;
                 Enemies.clear();
+                SquareEnemies.clear();
                 Bullets.clear();
                 deathParticles.clear();
                 player._pos = { screenWidth / 2, screenHeight / 2 };
@@ -195,6 +202,7 @@ void RunWindow()
                 player._exp = 0.0f;
                 player.requiredExp = 100.0f;
                 spawnTimer = 0.0f;
+                squareSpawnTimer = 0.0f;
                 fireTimer = 0.0f;
                 dmgTimer = dmgInterval;
             }
@@ -215,6 +223,7 @@ void RunWindow()
         {
             // ----- UPDATE TIMERS -----
             spawnTimer += deltaTime;
+            squareSpawnTimer += deltaTime;
             fireTimer += deltaTime;
             dmgTimer += deltaTime;
 
@@ -232,6 +241,19 @@ void RunWindow()
                 Enemies.push_back(newAgent);
 
                 spawnTimer = 0.0f;
+            }
+
+            // ---------- SPAWN A SQUARE EVERY 5 SECONDS ----------
+            if (squareSpawnTimer >= squareSpawnInterval)
+            {
+                AI_Agent newSquare;
+                newSquare.SetPos({ disX(gen), disY(gen) });
+                newSquare.maxSpeed = 150.0f;
+                newSquare._radius = 20.0f;
+                newSquare.active = true;
+
+                SquareEnemies.push_back(newSquare);
+                squareSpawnTimer = 0.0f;
             }
 
 #pragma region Movement
@@ -294,6 +316,13 @@ void RunWindow()
                 AI_Agent.MoveToPlayer(player._pos, 350, deltaTime);
             }
 
+            // Square enemies also chase the player.
+            for (auto& square : SquareEnemies)
+            {
+                if (!square.active) continue;
+                square.MoveToPlayer(player._pos, 350, deltaTime);
+            }
+
             for (size_t i = 0; i < Enemies.size(); ++i)
             {
                 for (size_t j = i + 1; j < Enemies.size(); ++j)
@@ -343,6 +372,34 @@ void RunWindow()
                         break;
                     }
                 }
+
+                // A bullet that destroyed a circle cannot also destroy a square.
+                if (Bullets[i]._disabled) continue;
+
+                // ---------- BULLET HIT SQUARE ----------
+                for (size_t j = 0; j < SquareEnemies.size(); ++j)
+                {
+                    if (!SquareEnemies[j].active) continue;
+
+                    // Use _Pos, not GetPos(): collision expects Vector2&.
+                    if (SquareEnemies[j].CheckOverlapWithOtherAgent(
+                        SquareEnemies[j]._Pos, Bullets[i]._pos,
+                        SquareEnemies[j]._radius, Bullets[i]._radius))
+                    {
+                        // Reuse the original death particle effect.
+                        SpawnDeathParticles(deathParticles, SquareEnemies[j].GetPos(), gen);
+                        SquareEnemies[j].active = false;
+                        Bullets[i]._disabled = true;
+
+                        std::uniform_real_distribution<float> distrib(
+                            SquareEnemies[j].minExp, SquareEnemies[j].maxExp);
+                        float exp = distrib(gen);
+                        player.LevelUp(exp);
+
+                        ++score;
+                        break;
+                    }
+                }
             }
 
             // ---------- BULLET HIT CLEANUP ----------
@@ -351,6 +408,12 @@ void RunWindow()
             (
                 std::remove_if(Enemies.begin(), Enemies.end(), [](const AI_Agent& e) { return !e.active; }),
                 Enemies.end()
+            );
+
+            SquareEnemies.erase(
+                std::remove_if(SquareEnemies.begin(), SquareEnemies.end(),
+                    [](const AI_Agent& e) { return !e.active; }),
+                SquareEnemies.end()
             );
 
             Bullets.erase
@@ -386,6 +449,29 @@ void RunWindow()
                     }
                 }
 
+                // ---------- SQUARE ENEMY DAMAGE ----------
+                if (!gameOver)
+                {
+                    for (auto& square : SquareEnemies)
+                    {
+                        if (!square.active) continue;
+
+                        if (square.CheckOverlapWithOtherAgent(
+                            square._Pos, player._pos,
+                            square._radius, player._radius))
+                        {
+                            player.setHealth(3);
+
+                            if (player.health <= 0)
+                            {
+                                PlaySound(EnemyVoice);
+                                gameOver = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+
                 dmgTimer = 0.0f;
             }
 
@@ -401,12 +487,24 @@ void RunWindow()
 
         ClearBackground(BLACK);
 
-        DrawTriangle(v1, v2, v3,  VIOLET);
+        DrawTriangle(v1, v2, v3, VIOLET);
 
         for (auto& AI_Agent : Enemies)
         {
             if (!AI_Agent.active) continue;
             AI_Agent.Draw();
+        }
+
+        // ---------- DRAW ORANGE SQUARE ENEMIES ----------
+        for (auto& square : SquareEnemies)
+        {
+            if (!square.active) continue;
+
+            Vector2 pos = square.GetPos();
+            float side = square._radius * 2.0f;
+            DrawRectangleV(
+                { pos.x - square._radius, pos.y - square._radius },
+                { side, side }, ORANGE);
         }
 
         for (auto& Bullet : Bullets)
