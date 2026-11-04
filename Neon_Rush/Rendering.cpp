@@ -1,4 +1,4 @@
-// ---------- DONT REMOVE ----------
+// ---------- DONT REMOVE PLEASE ---------- 
 #pragma comment(lib, "user32.lib")
 #pragma comment(lib, "gdi32.lib")
 #pragma comment(lib, "shell32.lib")
