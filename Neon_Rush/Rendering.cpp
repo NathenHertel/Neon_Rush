@@ -118,6 +118,7 @@ void RunWindow()
     // ---------- VECTORS FOR MULTIPLE OF 1 CLASS ----------
     std::vector<AI_Agent> Enemies;
     std::vector<AI_Agent> SquareEnemies;
+    std::vector<AI_Agent> TriangleEnemies;
     std::vector<Bullet> Bullets;
     std::vector<DeathParticle> deathParticles;
 
@@ -130,6 +131,10 @@ void RunWindow()
     // Squares spawn independently of the existing circle limit.
     float squareSpawnTimer = 0.0f;
     const float squareSpawnInterval = 5.0f;
+
+    // Triangle enemies appear every two seconds of active gameplay.
+    float triangleSpawnTimer = 0.0f;
+    const float triangleSpawnInterval = 2.0f;
 
     float fireTimer = 0.0f;
     const float fireInterval = 1.0f;
@@ -194,6 +199,7 @@ void RunWindow()
                 score = 0;
                 Enemies.clear();
                 SquareEnemies.clear();
+                TriangleEnemies.clear();
                 Bullets.clear();
                 deathParticles.clear();
                 player._pos = { screenWidth / 2, screenHeight / 2 };
@@ -203,6 +209,7 @@ void RunWindow()
                 player.requiredExp = 100.0f;
                 spawnTimer = 0.0f;
                 squareSpawnTimer = 0.0f;
+                triangleSpawnTimer = 0.0f;
                 fireTimer = 0.0f;
                 dmgTimer = dmgInterval;
             }
@@ -224,6 +231,7 @@ void RunWindow()
             // ----- UPDATE TIMERS -----
             spawnTimer += deltaTime;
             squareSpawnTimer += deltaTime;
+            triangleSpawnTimer += deltaTime;
             fireTimer += deltaTime;
             dmgTimer += deltaTime;
 
@@ -254,6 +262,20 @@ void RunWindow()
 
                 SquareEnemies.push_back(newSquare);
                 squareSpawnTimer = 0.0f;
+            }
+
+            // ---------- SPAWN A TRIANGLE EVERY 2 SECONDS ----------
+            if (triangleSpawnTimer >= triangleSpawnInterval)
+            {
+                AI_Agent newTriangle;
+                newTriangle.SetPos({ disX(gen), disY(gen) });
+                newTriangle.maxSpeed = 260.0f;
+                newTriangle._radius = 22.0f;
+                newTriangle._colour = LIME;
+                newTriangle.active = true;
+
+                TriangleEnemies.push_back(newTriangle);
+                triangleSpawnTimer -= triangleSpawnInterval;
             }
 
 #pragma region Movement
@@ -323,6 +345,13 @@ void RunWindow()
                 square.MoveToPlayer(player._pos, 350, deltaTime);
             }
 
+            // Triangles chase the player too (slightly slower than circles and squares).
+            for (auto& triangle : TriangleEnemies)
+            {
+                if (!triangle.active) continue;
+                triangle.MoveToPlayer(player._pos, triangle.maxSpeed, deltaTime);
+            }
+
             for (size_t i = 0; i < Enemies.size(); ++i)
             {
                 for (size_t j = i + 1; j < Enemies.size(); ++j)
@@ -373,7 +402,7 @@ void RunWindow()
                     }
                 }
 
-                // A bullet that destroyed a circle cannot also destroy a square.
+                // Each bullet can hit only one enemy.
                 if (Bullets[i]._disabled) continue;
 
                 // ---------- BULLET HIT SQUARE ----------
@@ -400,6 +429,30 @@ void RunWindow()
                         break;
                     }
                 }
+
+                if (Bullets[i]._disabled) continue;
+
+                // ---------- BULLET HIT TRIANGLE ----------
+                for (size_t j = 0; j < TriangleEnemies.size(); ++j)
+                {
+                    if (!TriangleEnemies[j].active) continue;
+
+                    if (TriangleEnemies[j].CheckOverlapWithOtherAgent(
+                        TriangleEnemies[j]._Pos, Bullets[i]._pos,
+                        TriangleEnemies[j]._radius, Bullets[i]._radius))
+                    {
+                        SpawnDeathParticles(deathParticles, TriangleEnemies[j].GetPos(), gen);
+                        TriangleEnemies[j].active = false;
+                        Bullets[i]._disabled = true;
+
+                        std::uniform_real_distribution<float> distrib(
+                            TriangleEnemies[j].minExp, TriangleEnemies[j].maxExp);
+                        player.LevelUp(distrib(gen));
+
+                        ++score;
+                        break;
+                    }
+                }
             }
 
             // ---------- BULLET HIT CLEANUP ----------
@@ -414,6 +467,12 @@ void RunWindow()
                 std::remove_if(SquareEnemies.begin(), SquareEnemies.end(),
                     [](const AI_Agent& e) { return !e.active; }),
                 SquareEnemies.end()
+            );
+
+            TriangleEnemies.erase(
+                std::remove_if(TriangleEnemies.begin(), TriangleEnemies.end(),
+                    [](const AI_Agent& e) { return !e.active; }),
+                TriangleEnemies.end()
             );
 
             Bullets.erase
@@ -472,6 +531,29 @@ void RunWindow()
                     }
                 }
 
+                // ---------- TRIANGLE ENEMY DAMAGE ----------
+                if (!gameOver)
+                {
+                    for (auto& triangle : TriangleEnemies)
+                    {
+                        if (!triangle.active) continue;
+
+                        if (triangle.CheckOverlapWithOtherAgent(
+                            triangle._Pos, player._pos,
+                            triangle._radius, player._radius))
+                        {
+                            player.setHealth(3);
+
+                            if (player.health <= 0)
+                            {
+                                PlaySound(EnemyVoice);
+                                gameOver = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+
                 dmgTimer = 0.0f;
             }
 
@@ -505,6 +587,26 @@ void RunWindow()
             DrawRectangleV(
                 { pos.x - square._radius, pos.y - square._radius },
                 { side, side }, ORANGE);
+        }
+
+        // ---------- DRAW GREEN TRIANGLE ENEMIES ----------
+        for (auto& triangle : TriangleEnemies)
+        {
+            if (!triangle.active) continue;
+
+            const Vector2 pos = triangle.GetPos();
+            const Vector2 direction = Vector2Normalize(Vector2Subtract(player._pos, pos));
+            const Vector2 forward = Vector2LengthSqr(direction) > 0.0001f
+                ? direction : Vector2{ 0.0f, -1.0f };
+            const Vector2 side = { -forward.y, forward.x };
+            const float radius = triangle._radius;
+            const Vector2 tip = Vector2Add(pos, Vector2Scale(forward, radius));
+            const Vector2 base = Vector2Subtract(pos, Vector2Scale(forward, radius * 0.6f));
+            const Vector2 left = Vector2Subtract(base, Vector2Scale(side, radius * 0.8f));
+            const Vector2 right = Vector2Add(base, Vector2Scale(side, radius * 0.8f));
+
+            DrawTriangle(tip, left, right, triangle._colour);
+            DrawTriangleLines(tip, left, right, WHITE);
         }
 
         for (auto& Bullet : Bullets)
