@@ -8,7 +8,12 @@ void PlayerProjectileCheck(std::vector<Bullet>& enemyBullets, Player& player, bo
 
         if (!b._disabled && CheckCollisionCircles(b._pos, b._radius, player._pos, player._radius))
         {
+
+            // ----- Disable Enemy Bullet -----
             b._disabled = true;
+
+            // ----- Deal Damage To Player -----
+            // & check if player is dead
             player.setHealth(3);
             if (player.health <= 0)
             {
@@ -21,12 +26,16 @@ void PlayerProjectileCheck(std::vector<Bullet>& enemyBullets, Player& player, bo
 void EnemyProjectileCheck(std::vector<Bullet>& bullets, std::vector<AI_Agent>& enemies,
     std::vector<DeathParticle>& particles, Player& player, int& _score, std::mt19937& gen, float dmg)
 {
+    // ----- Check once for all bullets -----
     for (size_t i = 0; i < bullets.size(); i++)
     {
+        // ----- Ignore Bullet if its not active -----
         if (bullets[i]._disabled) continue;
 
+        // ----- Check once for all enemies -----
         for (size_t j = 0; j < enemies.size(); j++)
         {
+            // ----- Ignore Enemy if not active -----
             if (!enemies[j].active) continue;
 
             if (!enemies[j].CheckOverlapWithOtherAgent(enemies[j]._Pos, bullets[i]._pos,
@@ -44,7 +53,13 @@ void EnemyProjectileCheck(std::vector<Bullet>& bullets, std::vector<AI_Agent>& e
                 std::uniform_real_distribution<float> distrib(enemies[j].minExp, enemies[j].maxExp);
                 LvlUp(&player, distrib(gen));
 
-                _score += enemies[j].ranged ? 2 : 1;
+                switch (enemies[j].type)
+                {
+                case EnemyType::Melee:    _score += 1; break;
+                case EnemyType::Square:   _score += 2; break;
+                case EnemyType::Ranged:   _score += 2; break;
+                case EnemyType::Triangle: _score += 3; break;
+                }
             }
             break;
         }

@@ -46,12 +46,12 @@
     <Filter Include="Source Files\AI">
       <UniqueIdentifier>{ad1eaec4-bcfd-408e-9b56-6ec4a50b13d7}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Scenes">
+      <UniqueIdentifier>{a9ff0cff-7b92-4fb4-94fd-2794173a24c3}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Rendering.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="EnemySpawning.cpp">
@@ -80,9 +80,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Rendering.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Particles.h">
       <Filter>Header Files\Visuals</Filter>
     </ClInclude>
@@ -111,6 +108,30 @@
       <Filter>Header Files\AI</Filter>
     </ClInclude>
     <ClInclude Include="Serialization.h">
+      <Filter>Header Files\System</Filter>
+    </ClInclude>
+    <ClInclude Include="SceneManager.h">
+      <Filter>Header Files\System</Filter>
+    </ClInclude>
+    <ClInclude Include="PlayScene.h">
+      <Filter>Header Files\Scenes</Filter>
+    </ClInclude>
+    <ClInclude Include="PauseScene.h">
+      <Filter>Header Files\Scenes</Filter>
+    </ClInclude>
+    <ClInclude Include="MenuUi.h">
+      <Filter>Header Files\Scenes</Filter>
+    </ClInclude>
+    <ClInclude Include="MainMenuScene.h">
+      <Filter>Header Files\Scenes</Filter>
+    </ClInclude>
+    <ClInclude Include="LevelUpScene.h">
+      <Filter>Header Files\Scenes</Filter>
+    </ClInclude>
+    <ClInclude Include="GameOverScene.h">
+      <Filter>Header Files\Scenes</Filter>
+    </ClInclude>
+    <ClInclude Include="Gamecontext.h">
       <Filter>Header Files\System</Filter>
     </ClInclude>
   </ItemGroup>

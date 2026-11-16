@@ -8,6 +8,8 @@
 #include <iostream>
 #include <vector>
 
+enum class EnemyType { Melee, Square, Ranged, Triangle };
+
 class AI_Agent
 {
 public:
@@ -33,7 +35,7 @@ public:
 	float shootTimer = 1.5f;
 	float shootInterval = 1.5f;
 
-	bool ranged = false;
+	EnemyType type = EnemyType::Melee;
 
 	AI_Agent();
 	AI_Agent(Vector2 pos, float radius, Color colour);
@@ -42,6 +44,9 @@ public:
 
 	static void Update(float deltaTime, Vector2 playerPos, std::vector<AI_Agent>& Enemies, std::vector<Bullet>& EnemyBullets);
 	virtual void Draw(Texture texture, int screenWidth, int screenHeight);
+
+	virtual void DrawSquare();
+	virtual void DrawTriangle();
 
 	void SetPos(Vector2 pos);
 	Vector2 GetPos();

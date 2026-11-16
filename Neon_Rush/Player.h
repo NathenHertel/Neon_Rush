@@ -33,7 +33,7 @@ public:
 
 	bool levelUp = false;
 
-	float fireInterval = 0.01f;
+	float fireInterval = 1.0f;
 	static constexpr float masterFireInt = 1.0f;
 	float delayBetweenShots = 0.1f;
 

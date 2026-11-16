@@ -26,16 +26,20 @@ Vector2 AI_Agent::GetPos()
 
 void AI_Agent::Update(float deltaTime, Vector2 playerPos, std::vector<AI_Agent>& Enemies, std::vector<Bullet>& EnemyBullets)
 {
-	for (auto& AI_Agent : Enemies)
+	for (auto& enemy : Enemies)
 	{
-		if (!AI_Agent.active) continue;
-		if (AI_Agent.ranged)
+		if (!enemy.active) continue;
+
+		switch (enemy.type)
 		{
-			AI_Agent.ShootAtPlayer(playerPos, deltaTime, EnemyBullets);
-		}
-		else
-		{
-			AI_Agent.MoveToPlayer(playerPos, 350, deltaTime);
+		case EnemyType::Ranged:
+			enemy.ShootAtPlayer(playerPos, deltaTime, EnemyBullets);
+			break;
+		case EnemyType::Melee:
+		case EnemyType::Square:
+		case EnemyType::Triangle:
+			enemy.MoveToPlayer(playerPos, enemy.maxSpeed, deltaTime);
+			break;
 		}
 	}
 
@@ -144,10 +148,27 @@ void AI_Agent::Draw(Texture texture, int screenWidth, int screenHeight)
 	Vector2 origin = { destWidth / 2.0f, destHeight / 2.0f };
 
 	DrawTexturePro(texture, src, destRec, origin, 0.0f, WHITE);
-	//DrawCircleV(_Pos, _radius, _colour);
+}
+
+void AI_Agent::DrawSquare()
+{
+	float side = _radius * 2.0f;
+
+	DrawRectangleV(
+		{ _Pos.x - _radius, _Pos.y - _radius },
+		{ side, side }, ORANGE
+	);
 }
 
 void AI_Agent::setHealth(int dmg)
 {
 	Health = Health - dmg;
+}
+
+void AI_Agent::DrawTriangle()
+{
+	Vector2 a = { _Pos.x, _Pos.y - _radius };
+	Vector2 b = { _Pos.x - _radius, _Pos.y + _radius };
+	Vector2 c = { _Pos.x + _radius, _Pos.y + _radius };
+	::DrawTriangle(a, b, c, RED);
 }

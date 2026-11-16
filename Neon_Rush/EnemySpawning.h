@@ -15,18 +15,23 @@ public:
 	void Update(float deltaTime, std::vector<AI_Agent>& enemies, std::mt19937& gen);
 	void Reset(int maxEn) 
 	{
-		timer = 0.0f,
+		timerCircle = 0.0f,
+		timerSquare = 0.0f,
+		timerTriangle = 0.0f;
 		maxEnemies = maxEn;
 	};
 
 private:
 	AI_Agent MakeEnemy(std::mt19937& gen);
 
-	float timer = 0.0f;
+	std::discrete_distribution<int> typeChance{ 40, 20, 25, 15 };
+
+	float timerCircle = 0.0f;
+	float timerSquare = 0.0f;
+	float timerTriangle = 0.0f;
 	float interval = 0.5f;
 	int maxEnemies;
 
 	std::uniform_real_distribution<float> disX{ 20.0f, screenWidth - 20.0f };
 	std::uniform_real_distribution<float> disY{ 20.0f, screenHeight - 20.0f };
-	std::bernoulli_distribution rangedChance{ 0.5 };
 };
