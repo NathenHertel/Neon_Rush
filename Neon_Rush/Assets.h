@@ -6,6 +6,9 @@ struct Assets
 	Texture player{};
 	Texture enemy{};
 	Sound enemyVoice{};
+	Sound laserShot{};
+	Sound EnemyDeath{};
+	Sound BackRound{};
 
 	void Load();
 	void Unload();

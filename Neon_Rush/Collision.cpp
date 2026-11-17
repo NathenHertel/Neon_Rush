@@ -24,7 +24,7 @@ void PlayerProjectileCheck(std::vector<Bullet>& enemyBullets, Player& player, bo
 }
 
 void EnemyProjectileCheck(std::vector<Bullet>& bullets, std::vector<AI_Agent>& enemies,
-    std::vector<DeathParticle>& particles, Player& player, int& _score, std::mt19937& gen, float dmg)
+    std::vector<DeathParticle>& particles, Player& player, int& _score, std::mt19937& gen, float dmg, Sound& EnemyDeath)
 {
     // ----- Check once for all bullets -----
     for (size_t i = 0; i < bullets.size(); i++)
@@ -49,16 +49,17 @@ void EnemyProjectileCheck(std::vector<Bullet>& bullets, std::vector<AI_Agent>& e
             {
                 SpawnDeathParticles(particles, enemies[j].GetPos(), gen);
                 enemies[j].active = false;
+                PlaySound(EnemyDeath);
 
                 std::uniform_real_distribution<float> distrib(enemies[j].minExp, enemies[j].maxExp);
                 LvlUp(&player, distrib(gen));
 
                 switch (enemies[j].type)
                 {
-                case EnemyType::Melee:    _score += 1; break;
-                case EnemyType::Square:   _score += 2; break;
-                case EnemyType::Ranged:   _score += 2; break;
-                case EnemyType::Triangle: _score += 3; break;
+                case EnemyType::Melee:    _score += 10; break;
+                case EnemyType::Square:   _score += 20; break;
+                case EnemyType::Ranged:   _score += 20; break;
+                case EnemyType::Triangle: _score += 30; break;
                 }
             }
             break;

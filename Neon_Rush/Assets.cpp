@@ -10,6 +10,15 @@ void Assets::Load()
 	if (enemy.id == 0) TraceLog(LOG_ERROR, "Enemy Texture Failed to load");
 	if (enemyVoice.frameCount == 0) TraceLog(LOG_ERROR, "Enemy Sound failed to load");
 
+
+	laserShot = LoadSound("SoundEffects/LaserSound1.mp3");
+	SetSoundVolume(laserShot, 0.5f);
+
+	EnemyDeath = LoadSound("SoundEffects/DeathSound.mp3");
+	SetSoundVolume(EnemyDeath, 0.5f);
+
+
+
 	loaded = true;
 }
 
@@ -20,6 +29,8 @@ void Assets::Unload()
 	UnloadTexture(player);
 	UnloadTexture(enemy);
 	UnloadSound(enemyVoice);
+	UnloadSound(laserShot);
+	UnloadSound(EnemyDeath);
 
 	loaded = false;
 }

@@ -19,6 +19,10 @@ void RunWindow()
 {
     InitWindow(screenWidth, screenHeight, "Neon Rush");
     InitAudioDevice();
+    Music backgroundMusic = LoadMusicStream("Music/BackgroundMusic.mp3");
+    backgroundMusic.looping = true;
+    SetMusicVolume(backgroundMusic, 0.25f);
+    PlayMusicStream(backgroundMusic);
     SetExitKey(KEY_NULL);
     SetTargetFPS(60);
 
@@ -42,8 +46,13 @@ void RunWindow()
     RenderTexture2D target = LoadRenderTexture(screenWidth, screenHeight);
     SetTextureFilter(target.texture, TEXTURE_FILTER_BILINEAR);
 
+
     while (!WindowShouldClose() && !ctx.quit)
     {
+        UpdateMusicStream(backgroundMusic);
+
+        // Keep all your existing game code here
+
         // ----- work out how the game image fits the window (letterboxed) -----
         const float winW = (float)GetScreenWidth();
         const float winH = (float)GetScreenHeight();
@@ -75,9 +84,12 @@ void RunWindow()
         EndDrawing();
     }
 
+    UnloadMusicStream(backgroundMusic);
     UnloadRenderTexture(target);
+    assets.Unload();
     CloseAudioDevice();
     CloseWindow();
+    
 }
 
 int main()

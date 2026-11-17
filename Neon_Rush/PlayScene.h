@@ -77,7 +77,17 @@ public:
         }
 
         player.UpdateAim(mouse);
+
+        size_t bulletsBefore = bullets.size();
+
         player.UpdateShooting(mouse, bullets, dt, fireTimer, screenWidth, screenHeight);
+
+        // Play laser sound when a bullet is fired
+        if (bullets.size() > bulletsBefore)
+        {
+            PlaySound(ctx.assets.laserShot);
+        }
+
 
         for (auto& b : bullets)
             b.Update(dt, screenWidth, screenHeight);
@@ -86,7 +96,9 @@ public:
         AI_Agent::Update(dt, player._pos, enemies, enemyBullets);
 
         PlayerProjectileCheck(enemyBullets, player, gameOver, dt);
-        EnemyProjectileCheck(bullets, enemies, deathParticles, player, score, ctx.rng, player.damage);
+
+        EnemyProjectileCheck(bullets,enemies,deathParticles,player,score,ctx.rng,player.damage,ctx.assets.EnemyDeath);
+
         ResetCollision(enemies, bullets, enemyBullets);
 
         if (dmgTimer >= DMG_INTERVAL)
