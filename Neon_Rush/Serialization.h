@@ -4,6 +4,7 @@
 #include "Agent.h"
 #include "Player.h"
 #include "Projectile.h"
+#include "Particles.h"
 
 #include <nlohmann/json.hpp>
 #include <fstream>
@@ -127,6 +128,32 @@ inline void from_json(const json& j, Player& p)
 }
 
 // ---------------------------------------------------------------------------
+// Particles
+// ---------------------------------------------------------------------------
+
+inline void to_json(json& j, const DeathParticle& d)
+{
+    j = json{
+        {"position",    d.position},
+        {"velocity",    d.velocity},
+        {"lifetime",    d.lifetime},
+        {"maxLifetime", d.maxLifetime},
+        {"radius",      d.radius},
+        {"color",       d.color}
+    };
+}
+
+inline void from_json(const json& j, DeathParticle& d)
+{
+    d.position = j.value("position", Vector2{ 0.0f, 0.0f });
+    d.velocity = j.value("velocity", Vector2{ 0.0f, 0.0f });
+    d.lifetime = j.value("lifetime", 0.0f);
+    d.maxLifetime = j.value("maxLifetime", 1.0f);
+    d.radius = j.value("radius", 1.0f);
+    d.color = j.value("color", WHITE);
+}
+
+// ---------------------------------------------------------------------------
 // Save / load
 // ---------------------------------------------------------------------------
 
@@ -135,6 +162,7 @@ inline bool SaveGame(const std::string& path,
     const Player& player,
     const std::vector<AI_Agent>& enemies,
     const std::vector<Bullet>& bullets,
+	const std::vector<DeathParticle>& particles,
     int score)
 {
     json root;
@@ -143,6 +171,8 @@ inline bool SaveGame(const std::string& path,
     root["player"] = player;
     root["enemies"] = enemies;
     root["bullets"] = bullets;
+	root["particles"] = particles;
+
 
     std::ofstream file(path);
     if (!file) return false;
@@ -157,6 +187,7 @@ inline bool LoadGame(const std::string& path,
     Player& player,
     std::vector<AI_Agent>& enemies,
     std::vector<Bullet>& bullets,
+	std::vector<DeathParticle>& particles,
     int& score)
 {
     std::ifstream file(path);
@@ -172,11 +203,13 @@ inline bool LoadGame(const std::string& path,
 
         auto newEnemies = root.value("enemies", std::vector<AI_Agent>{});
         auto newBullets = root.value("bullets", std::vector<Bullet>{});
+        auto newParticles = root.value("particles", std::vector<DeathParticle>{});
         int  newScore = root.value("score", 0);
 
         player = newPlayer;
         enemies = std::move(newEnemies);
         bullets = std::move(newBullets);
+        particles = std::move(newParticles);
         score = newScore;
     }
     catch (const std::exception&)
