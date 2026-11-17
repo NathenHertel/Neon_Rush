@@ -1,0 +1,8 @@
+[33m9289ddb[m[33m ([m[1;32mrescue[m[33m)[m Add serialization
+[33m78ec3c1[m json
+[33m54926a2[m[33m ([m[1;32mMenu-Pausing[m[33m)[m Added Textures and improved Level up logic. Has been merged with Serialization
+[33m1a4ad56[m menu and pause
+[33me71fb83[m[33m ([m[1;32mHealth/Shooting[m[33m, [m[1;32mAI_Spawning[m[33m)[m Added player health and damage taking, player shoots projectiles, enemys can die, basic score system
+[33m8b3372d[m Merge origin/AI_Spawning, keeping local versions
+[33ma70f5eb[m Add Agent following
+[33m2430806[m Delete Neon_Rush/AI.cpp

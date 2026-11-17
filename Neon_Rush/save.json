@@ -1,0 +1,83 @@
+{
+  "bullets": [],
+  "enemies": [
+    {
+      "active": true,
+      "colour": {
+        "a": 255,
+        "b": 241,
+        "g": 121,
+        "r": 0
+      },
+      "maxSpeed": 150.0,
+      "pos": {
+        "x": 424.4483947753906,
+        "y": 535.4368896484375
+      },
+      "radius": 20.0
+    },
+    {
+      "active": true,
+      "colour": {
+        "a": 255,
+        "b": 241,
+        "g": 121,
+        "r": 0
+      },
+      "maxSpeed": 150.0,
+      "pos": {
+        "x": 1090.55419921875,
+        "y": 683.5802612304688
+      },
+      "radius": 20.0
+    },
+    {
+      "active": true,
+      "colour": {
+        "a": 255,
+        "b": 241,
+        "g": 121,
+        "r": 0
+      },
+      "maxSpeed": 150.0,
+      "pos": {
+        "x": 438.60980224609375,
+        "y": 324.9697570800781
+      },
+      "radius": 20.0
+    },
+    {
+      "active": true,
+      "colour": {
+        "a": 255,
+        "b": 241,
+        "g": 121,
+        "r": 0
+      },
+      "maxSpeed": 150.0,
+      "pos": {
+        "x": 696.6812133789063,
+        "y": 197.42872619628906
+      },
+      "radius": 20.0
+    }
+  ],
+  "player": {
+    "amountOfShots": 0,
+    "delayBetweenShots": 0.10000000149011612,
+    "exp": 243.5203857421875,
+    "health": 1004,
+    "level": 3,
+    "levelUp": false,
+    "masterAmount": 1,
+    "max health": 1016,
+    "pos": {
+      "x": 1090.0,
+      "y": 680.0
+    },
+    "radius": 40.0,
+    "requiredExp": 3844.3359375
+  },
+  "score": 350,
+  "version": 1
+}

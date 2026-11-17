@@ -24,9 +24,44 @@ Vector2 AI_Agent::GetPos()
 	return _Pos;
 }
 
-void AI_Agent::Update(float deltaTime)
+void AI_Agent::Update(float deltaTime, Vector2 playerPos, std::vector<AI_Agent>& Enemies, std::vector<Bullet>& EnemyBullets)
 {
+	for (auto& enemy : Enemies)
+	{
+		if (!enemy.active) continue;
 
+		switch (enemy.type)
+		{
+		case EnemyType::Ranged:
+			enemy.ShootAtPlayer(playerPos, deltaTime, EnemyBullets);
+			break;
+		case EnemyType::Melee:
+		case EnemyType::Square:
+		case EnemyType::Triangle:
+			enemy.MoveToPlayer(playerPos, enemy.maxSpeed, deltaTime);
+			break;
+		}
+	}
+
+	for (size_t i = 0; i < Enemies.size(); ++i)
+	{
+		for (size_t j = i + 1; j < Enemies.size(); ++j)
+		{
+			AI_Agent& a = Enemies[i];
+			AI_Agent& b = Enemies[j];
+
+			Vector2 AIpos1 = a.GetPos();
+			Vector2 AIpos2 = b.GetPos();
+
+			if (a.CheckOverlapWithOtherAgent(AIpos1, AIpos2, a._radius, b._radius))
+			{
+				a.CollisionWithOtherAgent(AIpos1, AIpos2, a._radius, b._radius);
+
+				a.SetPos(AIpos1);
+				b.SetPos(AIpos2);
+			}
+		}
+	}
 }
 
 void AI_Agent::MoveToPlayer(Vector2& targetPos, float speed, float deltaTime)
@@ -36,6 +71,24 @@ void AI_Agent::MoveToPlayer(Vector2& targetPos, float speed, float deltaTime)
 		Vector2 Direction = Vector2Normalize(Vector2Subtract(targetPos, _Pos));
 		_Pos = Vector2Add(_Pos, Vector2Scale(Direction, speed * deltaTime));
 	}
+}
+
+void AI_Agent::ShootAtPlayer(Vector2& targetPos, float deltaTime, std::vector<Bullet>& EnemyBullets)
+{
+	shootTimer += deltaTime;
+	if (shootTimer < shootInterval) return;
+	if (Vector2Distance(_Pos, targetPos) <= 2.0f) return;
+
+	shootTimer = 0.0f;
+
+	Bullet newBullet;
+	Vector2 direction = Vector2Normalize(Vector2Subtract(targetPos, _Pos));
+
+	newBullet._pos = _Pos;
+	newBullet._radius = 5.0f;
+	newBullet._vel = Vector2Scale(direction, 300.0f);
+
+	EnemyBullets.push_back(newBullet);
 }
 
 bool AI_Agent::CheckOverlapWithOtherAgent(Vector2& selfPos, Vector2& otherPos, float selfRadius, float otherRadius)
@@ -77,7 +130,45 @@ void AI_Agent::CollisionWithOtherAgent(Vector2& selfPos, Vector2& otherPos, floa
 	otherPos.y += ny * push;
 }
 
-void AI_Agent::Draw()
+void AI_Agent::Draw(Texture texture, int screenWidth, int screenHeight)
 {
-	DrawCircleV(_Pos, _radius, _colour);
+	Rectangle src = { 0, 0, (float)texture.width, (float)texture.height };
+	
+	float destWidth = _radius * 3.0f;
+	float destHeight = _radius * 3.0f;
+
+	Rectangle destRec =
+	{
+		_Pos.x,
+		_Pos.y,
+		destWidth,
+		destHeight
+	};
+
+	Vector2 origin = { destWidth / 2.0f, destHeight / 2.0f };
+
+	DrawTexturePro(texture, src, destRec, origin, 0.0f, WHITE);
+}
+
+void AI_Agent::DrawSquare()
+{
+	float side = _radius * 2.0f;
+
+	DrawRectangleV(
+		{ _Pos.x - _radius, _Pos.y - _radius },
+		{ side, side }, ORANGE
+	);
+}
+
+void AI_Agent::setHealth(int dmg)
+{
+	Health = Health - dmg;
+}
+
+void AI_Agent::DrawTriangle()
+{
+	Vector2 a = { _Pos.x, _Pos.y - _radius };
+	Vector2 b = { _Pos.x - _radius, _Pos.y + _radius };
+	Vector2 c = { _Pos.x + _radius, _Pos.y + _radius };
+	::DrawTriangle(a, b, c, RED);
 }
