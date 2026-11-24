@@ -18,10 +18,13 @@
 #include "SceneManager.h"
 #include "GameContext.h"
 
+#include "Assets.h"
+
 // Overlays this scene can push
 #include "PauseScene.h"
 #include "LevelUpScene.h"
 #include "GameOverScene.h"
+#include "ShopScene.h"
 
 // Everything that used to be locals inside RunWindow().
 class PlayScene : public Scene
@@ -40,15 +43,16 @@ class PlayScene : public Scene
     std::vector<Bullet>        enemyBullets;
     std::vector<DeathParticle> deathParticles;
 
-    int   score = 0;
     bool  gameOver = false;
     float fireTimer = 0.0f;
     float dmgTimer = DMG_INTERVAL;
 
 public:
+
     explicit PlayScene(GameContext& c)
         : ctx(c), spawner(0.5f, player.EnemyAmt)
     {
+        ctx.finalScore = 0;
         player._pos = { screenWidth / 2, screenHeight / 2 };
         player._radius = 40.0f;
     }
@@ -56,6 +60,7 @@ public:
     void Update(float dt) override
     {
         if (IsKeyPressed(KEY_ESCAPE)) { scenes->Push<PauseScene>(ctx); return; }
+        if (IsKeyPressed(KEY_TAB)) { scenes->Push<ShopScene>(player); return; }
         if (IsKeyPressed(KEY_F5)) Save();
         if (IsKeyPressed(KEY_F9)) Load();
 
@@ -76,8 +81,18 @@ public:
             player.StartBurst(fireTimer);
         }
 
+        player.PowerUpdate(dt);
+
         player.UpdateAim(mouse);
+
+        size_t bulletsBefore = bullets.size();
+
         player.UpdateShooting(mouse, bullets, dt, fireTimer, screenWidth, screenHeight);
+
+        if (bullets.size() > bulletsBefore)
+        {
+            PlaySound(ctx.assets.LaserShot);
+        }
 
         for (auto& b : bullets)
             b.Update(dt, screenWidth, screenHeight);
@@ -86,7 +101,10 @@ public:
         AI_Agent::Update(dt, player._pos, enemies, enemyBullets);
 
         PlayerProjectileCheck(enemyBullets, player, gameOver, dt);
-        EnemyProjectileCheck(bullets, enemies, deathParticles, player, score, ctx.rng, player.damage);
+
+        ctx.UpdateHighScore(player.score);
+
+        EnemyProjectileCheck(bullets, enemies, deathParticles, player, player.score, ctx.rng, player.damage, ctx.assets.EnemyDeath);
         ResetCollision(enemies, bullets, enemyBullets);
 
         if (dmgTimer >= DMG_INTERVAL)
@@ -97,9 +115,27 @@ public:
 
         // ----- State transitions: push an overlay instead of flipping a bool -----
         if (gameOver)
+        {
+            ctx.finalScore = player.score;
+            spawner.ResetAll(player.EnemyAmt);
             scenes->Push<GameOverScene>(ctx);
+        }
         else if (player.levelUp)
-            scenes->Push<LevelUpScene>(player, spawner);
+        {
+            int next = player.level + 1;
+            if (next % 5 == 0)
+            {
+                std::cout << "scaled" << std::endl;
+                spawner.ScaleAllEnemies(enemies, spawner);
+            }
+
+            if (next % 5 == 0)
+            {
+                spawner.SpawnMiniBoss();
+            }
+            
+            scenes->Push<LevelUpScene>(player, spawner, ctx.assets.font);
+        }
     }
 
     // Runs while an overlay is on top: keeps death particles animating behind menus.
@@ -111,6 +147,14 @@ public:
     void Render() override
     {
         player.DrawPlayer(ctx.assets.player);
+
+        for (auto& enemy : enemies)
+        {
+            if (enemy.active && enemy.type == EnemyType::MiniBossSp)
+                enemy.drawAura();
+            if (enemy.active && enemy.type == EnemyType::MiniBossH)
+                enemy.drawAura();
+        }
 
         for (auto& e : enemies)
         {
@@ -125,8 +169,16 @@ public:
                 e.DrawTriangle();   // whatever you named the triangle draw function
                 break;
             case EnemyType::Melee:
+                e.Draw(ctx.assets.enemy, screenWidth, screenHeight);
+                break;
             case EnemyType::Ranged:
                 e.Draw(ctx.assets.enemy, screenWidth, screenHeight);
+                break;
+            case EnemyType::MiniBossH:
+                e.DrawSquare();
+                break;
+            case EnemyType::MiniBossSp:
+                e.DrawSquare();
                 break;
             }
         }
@@ -136,32 +188,53 @@ public:
 
         DrawDeathParticles(deathParticles);
 
-        const char* hud = TextFormat("Score: %d, Health: %d/%d, Level: %d, Enemy Amount: %d",
-            score, player.health, player.maxHealth, player.Level, player.EnemyAmt);
-        DrawRectangle(5, 5, MeasureText(hud, 20) + 8, 24, BLACK);
-        DrawText(hud, 6, 6, 20, GREEN);
+        const char* hud = TextFormat("Score: %d, Points: %d, Health: %d/%d, Level: %d",
+            player.score, player.points, (int)std::round(player.health), (int)std::round(player.maxHealth), player.level);
+
+        Vector2 size = MeasureTextEx(ctx.assets.font, hud, 20, 1.0f);
+        DrawRectangle(5, 5, (int)size.x + 8, 26, BLACK);
+        DrawTextEx(ctx.assets.font, hud, { 6, 6 }, 20, 1.0f, GREEN);
+
+        const float highScoreFontSize = 24.0f;
+        const float highScoreSpacing = 5.0f;
+        const int padding = 40;
+
+        const char* highScoreText =
+            TextFormat("High Score: %d", ctx.highScore);
+
+        const Vector2 textSize = MeasureTextEx(ctx.assets.font, highScoreText, highScoreFontSize, highScoreSpacing);
+
+        const float highScoreX = screenWidth - padding - textSize.x;
+
+        DrawRectangle(highScoreX - 5, 5, textSize.x + 10, textSize.y + 8, BLACK);
+
+        DrawTextEx(ctx.assets.font, highScoreText, { highScoreX, 9 }, highScoreFontSize, highScoreSpacing, GOLD);
     }
 
 private:
     void Save()
     {
-        if (SaveGame("save.json", player, enemies, bullets, score))
-            std::cout << "Game Saved" << std::endl;
-        else
-            std::cout << "Save FAILED: could not write save.json" << std::endl;
+        const SaveResult r = SaveGame("save.json", player, enemies, bullets, enemyBullets, deathParticles, player.score);
+        if (r) std::cout << "Game Saved" << std::endl;
+        else std::cout << "Save Failed: " << r.message << std::endl;
     }
 
     void Load()
     {
-        if (LoadGame("save.json", player, enemies, bullets, score))
+        const SaveResult r = LoadGame("save.json", player, enemies, bullets, enemyBullets, deathParticles, player.score);
+
+        if (r)
         {
             gameOver = false;
             fireTimer = 0.0f;
+            dmgTimer = DMG_INTERVAL;
+            spawner.Reset(player.EnemyAmt);
             std::cout << "Game Loaded" << std::endl;
         }
         else
         {
-            std::cout << "Load FAILED: save.json is missing or invalid" << std::endl;
+            std::cout << "Load Failed: " << r.message << std::endl;
         }
     }
+
 };

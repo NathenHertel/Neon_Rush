@@ -28,6 +28,21 @@ void AI_Agent::Update(float deltaTime, Vector2 playerPos, std::vector<AI_Agent>&
 {
 	for (auto& enemy : Enemies)
 	{
+		enemy.speedMultiplier = 1.0f;
+		enemy.healthMultiplier = 1.0f;
+	}
+
+	for (auto& enemy : Enemies)
+	{
+		if (!enemy.active) continue;
+		if (enemy.type == EnemyType::MiniBossSp)
+			enemy.SpeedAura(Enemies);
+		if (enemy.type == EnemyType::MiniBossH)
+			enemy.HealthAura(Enemies);
+	}
+
+	for (auto& enemy : Enemies)
+	{
 		if (!enemy.active) continue;
 
 		switch (enemy.type)
@@ -38,7 +53,9 @@ void AI_Agent::Update(float deltaTime, Vector2 playerPos, std::vector<AI_Agent>&
 		case EnemyType::Melee:
 		case EnemyType::Square:
 		case EnemyType::Triangle:
-			enemy.MoveToPlayer(playerPos, enemy.maxSpeed, deltaTime);
+		case EnemyType::MiniBossH:
+		case EnemyType::MiniBossSp:
+			enemy.MoveToPlayer(playerPos, enemy.maxSpeed * enemy.speedMultiplier, deltaTime);
 			break;
 		}
 	}
@@ -87,6 +104,7 @@ void AI_Agent::ShootAtPlayer(Vector2& targetPos, float deltaTime, std::vector<Bu
 	newBullet._pos = _Pos;
 	newBullet._radius = 5.0f;
 	newBullet._vel = Vector2Scale(direction, 300.0f);
+	newBullet.damage = damage;
 
 	EnemyBullets.push_back(newBullet);
 }
@@ -98,6 +116,55 @@ bool AI_Agent::CheckOverlapWithOtherAgent(Vector2& selfPos, Vector2& otherPos, f
 	float radiusSum = selfRadius + otherRadius;
 
 	return (dx * dx + dy * dy) < (radiusSum * radiusSum);
+}
+
+void AI_Agent::Scaling()
+{
+	Health *= 1.05f;
+	damage *= 1.01f;
+
+	minExp *= 1.01f;
+	maxExp *= 1.01f;
+}
+
+void AI_Agent::SpeedAura(std::vector<AI_Agent>& Enemies)
+{
+	for (auto& other : Enemies)
+	{
+		if (!other.active || &other == this) continue;
+
+		float dx = other._Pos.x - _Pos.x;
+		float dy = other._Pos.y - _Pos.y;
+		float r = auraRadius + other._radius;
+
+		//if (dx * dx + dy * dy < r * r)
+		//	other.speedBonus += 50.0f;
+
+		if (dx * dx + dy * dy < r * r)
+		{
+			other.speedMultiplier = std::max(other.speedMultiplier, auraSpeedBoost);
+		}
+	}
+}
+
+void AI_Agent::HealthAura(std::vector<AI_Agent>& Enemies)
+{
+	for (auto& other : Enemies)
+	{
+		if (!other.active || &other == this) continue;
+
+		float dx = other._Pos.x - _Pos.x;
+		float dy = other._Pos.y - _Pos.y;
+		float r = auraRadius + other._radius;
+
+		//if (dx * dx + dy * dy < r * r)
+		//	other.speedBonus += 50.0f;
+
+		if (dx * dx + dy * dy < r * r)
+		{
+			other.healthMultiplier = std::max(other.healthMultiplier, auraHealthBoost);
+		}
+	}
 }
 
 void AI_Agent::CollisionWithOtherAgent(Vector2& selfPos, Vector2& otherPos, float selfRadius, float otherRadius)
@@ -150,19 +217,26 @@ void AI_Agent::Draw(Texture texture, int screenWidth, int screenHeight)
 	DrawTexturePro(texture, src, destRec, origin, 0.0f, WHITE);
 }
 
+void AI_Agent::drawAura()
+{
+	Color c = (type == EnemyType::MiniBossH) ? GREEN : YELLOW;
+	DrawCircleV(_Pos, auraRadius, Fade(c, 0.1f));
+	DrawCircleLinesV(_Pos, auraRadius, c);
+}
+
 void AI_Agent::DrawSquare()
 {
 	float side = _radius * 2.0f;
 
 	DrawRectangleV(
 		{ _Pos.x - _radius, _Pos.y - _radius },
-		{ side, side }, ORANGE
+		{ side, side }, _colour
 	);
 }
 
-void AI_Agent::setHealth(int dmg)
+void AI_Agent::setHealth(float dmg)
 {
-	Health = Health - dmg;
+	Health = Health - (dmg / healthMultiplier);
 }
 
 void AI_Agent::DrawTriangle()
@@ -170,5 +244,5 @@ void AI_Agent::DrawTriangle()
 	Vector2 a = { _Pos.x, _Pos.y - _radius };
 	Vector2 b = { _Pos.x - _radius, _Pos.y + _radius };
 	Vector2 c = { _Pos.x + _radius, _Pos.y + _radius };
-	::DrawTriangle(a, b, c, RED);
+	::DrawTriangle(a, b, c, _colour);
 }

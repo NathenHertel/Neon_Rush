@@ -1,5 +1,6 @@
 #include "Player.h"
 #include "Assets.h"
+#include "Shop.h"
 
 void Player::setHealth(int damage)
 {
@@ -37,6 +38,32 @@ void Player::UpdateAim(Vector2 mousePos)
 	v3 = rot(o3);
 }
 
+void Player::PowerUpdate(float deltaTime)
+{
+	if (rapidFireActive)
+	{
+		rapidFireTimer -= deltaTime;
+		if (rapidFireTimer <= 0.0f)
+		{
+			rapidFireActive = false;
+			rapidFireTimer = 0.0f;
+		}
+	}
+
+	if (tripleShotActive)
+	{
+		tripleShotTimer -= deltaTime;
+		if (tripleShotTimer <= 0.0f)
+		{
+			tripleShotActive = false;
+			tripleShotTimer = 0.0f;
+		}
+	}
+
+	fireInterval = baseFireInterval * (rapidFireActive ? 0.5f : 1.0f);
+	shotCount = tripleShotActive ? 3 : 1;
+}
+
 void Player::StartBurst(float& fireTimer)
 {
 	if (amountOfShots == 0)
@@ -62,21 +89,16 @@ void Player::UpdateShooting(Vector2 mousePos, std::vector<Bullet>& bullets, floa
 
 		if (length > 0.0f)
 		{
-			Bullet newBullet;
-			newBullet._pos.x = v1.x;
-			newBullet._pos.y = v1.y;
-			newBullet._radius = 5.0f;
+			float baseAngle = atan2f(dy, dx);
 
-			float dirX = dx / length;
-			float dirY = dy / length;
+			// ---- fan goes here, replacing the old SpawnBullet(bullets, baseAngle, 500.0f) ----
+			float spread = 15.0f * DEG2RAD;
 
-			Vector2 vel = { (dirX * 500.0f), (dirY * 500.0f) };
-
-			newBullet._vel = vel;
-
-			newBullet.Update(deltaTime, screenWidth, screenHeight);
-
-			bullets.push_back(newBullet);
+			for (int i = 0; i < shotCount; i++)
+			{
+				float offset = (i - (shotCount - 1) / 2.0f) * spread;
+				SpawnBullet(bullets, baseAngle + offset, 500.0f);
+			}
 		}
 
 		bulletsToSpawn--;
@@ -103,23 +125,32 @@ void Player::HandleMovement(float deltaTime)
 	// ---------- MOVEMENT ----------
 
 	// ----- RIGHT -----
-	if (IsKeyDown(KEY_RIGHT)) _pos.x += speed;
-	else if (IsKeyDown(KEY_D)) _pos.x += speed;
+	if (IsKeyDown(KEY_RIGHT)) _pos.x += playerSpeed;
+	else if (IsKeyDown(KEY_D)) _pos.x += playerSpeed;
 
 	// ----- LEFT -----
-	if (IsKeyDown(KEY_LEFT)) _pos.x -= speed;
-	else if (IsKeyDown(KEY_A)) _pos.x -= speed;
+	if (IsKeyDown(KEY_LEFT)) _pos.x -= playerSpeed;
+	else if (IsKeyDown(KEY_A)) _pos.x -= playerSpeed;
 
 	// ----- UP -----
-	if (IsKeyDown(KEY_UP)) _pos.y -= speed;
-	else if (IsKeyDown(KEY_W)) _pos.y -= speed;
+	if (IsKeyDown(KEY_UP)) _pos.y -= playerSpeed;
+	else if (IsKeyDown(KEY_W)) _pos.y -= playerSpeed;
 
 	// ----- DOWN -----
-	if (IsKeyDown(KEY_DOWN)) _pos.y += speed;
-	else if (IsKeyDown(KEY_S)) _pos.y += speed;
+	if (IsKeyDown(KEY_DOWN)) _pos.y += playerSpeed;
+	else if (IsKeyDown(KEY_S)) _pos.y += playerSpeed;
 
 	_pos.x = Clamp(_pos.x, _radius, screenWidth - _radius);
 	_pos.y = Clamp(_pos.y, _radius, screenHeight - _radius);
+}
+
+void Player::SpawnBullet(std::vector<Bullet>& bullets, float angleRad, float speed)
+{
+	Bullet b;
+	b._pos = v1;                  // tip of the ship
+	b._radius = 5.0f;
+	b._vel = { cosf(angleRad) * speed, sinf(angleRad) * speed };
+	bullets.push_back(b);
 }
 
 void Player::Reset()
@@ -128,10 +159,19 @@ void Player::Reset()
 	health = baseHealth;
 	maxHealth = baseHealth;
 	levelUp = false;
-	Level = 0;
+	level = 0;
 	EnemyAmt = 5;
+	score = 0;
 	_exp = 0.0f;
 	requiredExp = 100.0f;
 	fireInterval = 1.0f;
 	damage = DmgBase;
+	shieldAmt = 0;
+	points = 0;
+	rapidFireActive = false;
+	rapidFireTimer = 0.0f;
+	tripleShotActive = false;
+	tripleShotTimer = 0.0f;
+	hasExtraLife = false;
+	playerSpeed = 10.0f;
 }

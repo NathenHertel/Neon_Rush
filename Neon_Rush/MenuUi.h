@@ -27,14 +27,17 @@ inline Rectangle MenuButton(int i)
     return { screenWidth / 2.0f - w / 2.0f, screenHeight / 2.0f + i * (h + gap), w, h };
 }
 
-inline void DrawMenuButton(Rectangle r, const char* label)
+inline void DrawMenuButton(Rectangle r, const char* label, Font font)
 {
+
     bool hover = CheckCollisionPointRec(GetMousePosition(), r);
     DrawRectangleRec(r, hover ? ORANGE : RED);
 
     const int fs = 24;
-    int tw = MeasureText(label, fs);
-    DrawText(label, (int)(r.x + (r.width - tw) / 2), (int)(r.y + (r.height - fs) / 2), fs, WHITE);
+    Vector2 ts = MeasureTextEx(font, label, fs, 1.0f);
+    float x = r.x + (r.width - ts.x) / 2.0f;
+    float y = r.y + (r.height - ts.y) / 2.0f;
+    DrawTextEx(font, label, { x, y }, fs, 1.0f, WHITE);
 }
 
 inline bool Clicked(Rectangle r)

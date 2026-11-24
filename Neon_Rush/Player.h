@@ -14,27 +14,49 @@ public:
 	Vector2 pivot;
 	Vector2 v1, v2, v3;
 
-	int health = 9;
-	int maxHealth = 9;
-	static constexpr int baseHealth = 9;
+	float health = 9.0f;
+	float maxHealth = 9.0f;
+	static constexpr float baseHealth = 9.0f;
 
-	int damage = 5;
-	static constexpr int DmgBase = 5;
+	float damage = 5.0f;
+	static constexpr float DmgBase = 5.0f;
+
+	float playerSpeed = 10.0f;
+
+	bool hasExtraLife = false;
 
 	Texture2D* tex;
 	Vector2 texPos;
 
-	int Level = 0;
 	int EnemyAmt = 5;
 
+	int level = 0;
+
+	bool rapidFireActive;
+	bool tripleShotActive;
+
+	int score = 0;
+	bool levelUp = false;
+	int shieldAmt = 0;
+
+	bool spawnMiniBoss = false;
+
+	int points = 0;
+
 	int amountOfShots = 0;
+	int shotCount = 1;
 	int bulletsToSpawn = 0;
 	int masterAmount = 1;
 
-	bool levelUp = false;
+	float rapidFireTimer = 0.0f;
+	float tripleShotTimer = 0.0f;
+	const float rapidFireDur = 15.0f;
+	const float tripleShotDur = 10.0f;
 
 	float fireInterval = 1.0f;
+	float baseFireInterval = 1.0f;
 	static constexpr float masterFireInt = 1.0f;
+	float currentFireInt = 0.0f;
 	float delayBetweenShots = 0.1f;
 
 	float _radius = 20.0f;
@@ -45,8 +67,12 @@ public:
 
 	void UpdateAim(Vector2 mousePos);
 
+	void PowerUpdate(float deltaTime);
+
 	void StartBurst(float& fireTimer);
 	void UpdateShooting(Vector2 mousePos, std::vector<Bullet>& bullets, float deltaTime, float& fireTimer, int screenWidth, int screenHeight);
+
+	void SpawnBullet(std::vector<Bullet>& bullets, float angleRad, float speed);
 
 	void DrawPlayer(Texture texture);
 
