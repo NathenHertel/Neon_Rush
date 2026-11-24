@@ -13,6 +13,7 @@ public:
 	bool _disabled = false;
 	Color _colour = { RED };
 	float _radius;
+	float damage;
 
 	Bullet();
 	Bullet(Vector2 startPos, float radius);

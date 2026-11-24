@@ -78,6 +78,9 @@
     <ClCompile Include="Agent.cpp">
       <Filter>Source Files\AI</Filter>
     </ClCompile>
+    <ClCompile Include="Shop.cpp">
+      <Filter>Source Files\Player</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Particles.h">
@@ -134,6 +137,12 @@
     <ClInclude Include="Gamecontext.h">
       <Filter>Header Files\System</Filter>
     </ClInclude>
+    <ClInclude Include="Shop.h">
+      <Filter>Header Files\Player</Filter>
+    </ClInclude>
+    <ClInclude Include="ShopScene.h">
+      <Filter>Header Files\Scenes</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Media Include="..\..\..\..\Downloads\spongebob-hi-how-are-ya-.mp3">
@@ -143,7 +152,7 @@
   <ItemGroup>
     <None Include="packages.config" />
     <None Include="..\..\..\..\Downloads\vcpkg.json">
-      <Filter>Resource Files</Filter>
+      <Filter>Header Files\Visuals</Filter>
     </None>
   </ItemGroup>
 </Project>

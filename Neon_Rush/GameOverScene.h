@@ -4,6 +4,7 @@
 #include "Config.h"
 #include "SceneManager.h"
 #include "GameContext.h"
+#include "PlayScene.h"
 
 // Overlay pushed by PlayScene. (was: `if (gameOver) { ... }`)
 class GameOverScene : public Scene
@@ -23,9 +24,21 @@ public:
 
     void Render() override
     {
+        const Font& f = ctx.assets.font;
+        const char* ScoreText = TextFormat("Final Score: %d", ctx.finalScore);
+
         DrawRectangle(0, 0, screenWidth, screenHeight, Fade(BLACK, 0.6f));
-        DrawText("GAME OVER", screenWidth / 2 - 152, screenHeight / 2 - 40, 50, RED);
-        DrawText("Press R to Restart", screenWidth / 2 - 120, screenHeight / 2 + 20, 24, WHITE);
-        DrawText("Press M for Main Menu", screenWidth / 2 - 135, screenHeight / 2 + 55, 24, LIGHTGRAY);
+
+        DrawCentered(f, "GAME OVER", screenHeight / 2 - 100, 50, RED);
+        DrawCentered(f, ScoreText, screenHeight / 2 - 30, 30, WHITE);
+        DrawCentered(f, "Press R to Restart", screenHeight / 2 + 30, 24, WHITE);
+        DrawCentered(f, "Press M for Main Menu", screenHeight / 2 + 65, 24, LIGHTGRAY);
+    }
+
+private:
+    static void DrawCentered(const Font& f, const char* text, int y, float size, Color c)
+    {
+        Vector2 m = MeasureTextEx(f, text, size, 1.0f);
+        DrawTextEx(f, text, { (screenWidth - m.x) / 2.0f, (float)y }, size, 1.0f, c);
     }
 };

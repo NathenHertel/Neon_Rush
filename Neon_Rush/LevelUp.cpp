@@ -6,7 +6,7 @@ void LvlUp(Player* player, float exp)
 
 	if (player->_exp >= player->requiredExp)
 	{
-		player->maxHealth = player->maxHealth * 1.5f;
+		player->maxHealth = player->maxHealth * 1.10f;
 		player->health = player->maxHealth;
 		player->_exp = player->_exp - player->requiredExp;
 		player->requiredExp = player->requiredExp * 1.5f;
@@ -14,7 +14,7 @@ void LvlUp(Player* player, float exp)
 	}
 }
 
-void DrawLevelUpMenu(Player* player, Vector2 mousePos, int screenWidth, int screenHeight)
+void DrawLevelUpMenu(Player* player, Vector2 mousePos, int screenWidth, int screenHeight, Font font)
 {
     DrawRectangle(0, 0, screenWidth, screenHeight, Fade(BLACK, 0.6f));
 
@@ -33,17 +33,20 @@ void DrawLevelUpMenu(Player* player, Vector2 mousePos, int screenWidth, int scre
 
         DrawRectangleRec(card, DARKGRAY);
 
-        int tw = MeasureText(titles[i], 30);
-        DrawText(titles[i], (int)(title.x + (title.width - tw) / 2),
-            (int)(title.y + (title.height - 30) / 2), 30, WHITE);
+        Vector2 ts = MeasureTextEx(font, titles[i], 30, 1.0f);
+        DrawTextEx(font, titles[i],
+            { title.x + (title.width - ts.x) / 2, title.y + (title.height - ts.y) / 2 },
+            30, 1.0f, WHITE);
 
         DrawRectangleRec(img, GRAY);
 
         bool hover = CheckCollisionPointRec(mousePos, button);
         DrawRectangleRec(button, hover ? RED : MAROON);
 
-        int bw = MeasureText("Pick", 24);
-        DrawText("Pick", (int)(button.x + (button.width - bw) / 2), (int)(button.y + (button.height - 24) / 2), 24, WHITE);
+        Vector2 bs = MeasureTextEx(font, "Pick", 24, 1.0f);
+        DrawTextEx(font, "Pick",
+            { button.x + (button.width - bs.x) / 2, button.y + (button.height - bs.y) / 2 },
+            24, 1.0f, WHITE);
 
         // Find Which Button is pressed for level up option
         if (hover && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
@@ -51,44 +54,42 @@ void DrawLevelUpMenu(Player* player, Vector2 mousePos, int screenWidth, int scre
             switch (i)
             {
             case 0: // Health
-                player->Level += 1;
+                player->level += 1;
                 player->maxHealth = player->maxHealth + 10.0f;
                 player->health = player->maxHealth; // Heal On Level Up
 
-                if (player->Level == 5)
+                if (player->level % 3 == 0)
                 {
-                    player->Level = 0;
                     player->EnemyAmt = player->EnemyAmt + 1;
                 }
+                
 
                 player->levelUp = false; // Reset status of needed to be leveled up
-
+                break;
             case 1: // Damage
-                player->Level += 1;
+                player->level += 1;
                 player->health = player->maxHealth;
                 player->damage = player->damage + 5;
 
-                if (player->Level == 5)
+                if (player->level % 3 == 0)
                 {
-                    player->Level = 0;
                     player->EnemyAmt = player->EnemyAmt + 1;
                 }
 
                 player->levelUp = false;
-
+                break;
             case 2: // Attack Speed
-                player->Level += 1;
+                player->level += 1;
                 player->health = player->maxHealth;
-                player->fireInterval = player->fireInterval - 0.05;
+                player->baseFireInterval = std::max(0.1f, player->baseFireInterval - 0.05f);
 
-                if (player->Level == 5)
+                if (player->level % 3 == 0)
                 {
-                    player->Level = 0;
                     player->EnemyAmt = player->EnemyAmt + 1;
                 }
 
                 player->levelUp = false;
-
+                break;
             }
         }
     }
