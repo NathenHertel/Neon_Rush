@@ -12,10 +12,10 @@ class LevelUpScene : public Scene
 {
     Player& player;
     EnemySpawner& spawner;
+    Sound Upgrade;
 
 public:
-    LevelUpScene(Player& p, EnemySpawner& s) : player(p), spawner(s) {}
-
+    LevelUpScene(Player& p, EnemySpawner& s, Sound upgrade) : player(p), spawner(s), Upgrade(upgrade) { }
     bool IsOverlay() const override { return true; }
 
     void Update(float) override
@@ -30,6 +30,6 @@ public:
 
     void Render() override
     {
-        DrawLevelUpMenu(&player, GetMousePosition(), screenWidth, screenHeight);
+        DrawLevelUpMenu(&player, GetMousePosition(), screenWidth, screenHeight, Upgrade);
     }
 };

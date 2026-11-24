@@ -113,7 +113,7 @@ public:
         if (gameOver)
             scenes->Push<GameOverScene>(ctx);
         else if (player.levelUp)
-            scenes->Push<LevelUpScene>(player, spawner);
+            scenes->Push<LevelUpScene>(player, spawner,ctx.assets.Upgrade);
     }
 
     // Runs while an overlay is on top: keeps death particles animating behind menus.

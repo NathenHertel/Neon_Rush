@@ -4,7 +4,7 @@ void Assets::Load()
 {
 	player = LoadTexture("Textures/IMG_1138.png");
 	enemy = LoadTexture("Textures/IMG_1139.png");
-	enemyVoice = LoadSound("spongebob-hi-how-are-ya-.mp3");
+	
 
 	if (player.id == 0) TraceLog(LOG_ERROR, "Player Texture Failed to load");
 	if (enemy.id == 0) TraceLog(LOG_ERROR, "Enemy Texture Failed to load");
@@ -17,7 +17,8 @@ void Assets::Load()
 	EnemyDeath = LoadSound("SoundEffects/DeathSound.mp3");
 	SetSoundVolume(EnemyDeath, 0.5f);
 
-
+	Upgrade = LoadSound("SoundEffects/UpgradeSound.mp3");
+	SetSoundVolume(Upgrade, 0.5f);	
 
 	loaded = true;
 }
@@ -31,6 +32,7 @@ void Assets::Unload()
 	UnloadSound(enemyVoice);
 	UnloadSound(laserShot);
 	UnloadSound(EnemyDeath);
+	UnloadSound(Upgrade);
 
 	loaded = false;
 }

@@ -9,6 +9,7 @@ struct Assets
 	Sound laserShot{};
 	Sound EnemyDeath{};
 	Sound BackRound{};
+	Sound Upgrade{};
 
 	void Load();
 	void Unload();

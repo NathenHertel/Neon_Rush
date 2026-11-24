@@ -14,7 +14,7 @@ void LvlUp(Player* player, float exp)
 	}
 }
 
-void DrawLevelUpMenu(Player* player, Vector2 mousePos, int screenWidth, int screenHeight)
+void DrawLevelUpMenu(Player* player, Vector2 mousePos, int screenWidth, int screenHeight, Sound Upgrade)
 {
     DrawRectangle(0, 0, screenWidth, screenHeight, Fade(BLACK, 0.6f));
 
@@ -86,8 +86,13 @@ void DrawLevelUpMenu(Player* player, Vector2 mousePos, int screenWidth, int scre
                     player->Level = 0;
                     player->EnemyAmt = player->EnemyAmt + 1;
                 }
+                PlaySound(Upgrade);
+
 
                 player->levelUp = false;
+
+
+           
 
             }
         }
