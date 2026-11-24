@@ -145,23 +145,25 @@ public:
 private:
     void Save()
     {
-        if (SaveGame("save.json", player, enemies, bullets, deathParticles, score))
-            std::cout << "Game Saved" << std::endl;
-        else
-            std::cout << "Save FAILED: could not write save.json" << std::endl;
+        const SaveResult r = SaveGame("save.json", player, enemies, bullets,
+            enemyBullets, deathParticles, score);
+        if (r) std::cout << "Game saved\n";
+        else   std::cout << "Save FAILED: " << r.message << "\n";
     }
 
     void Load()
     {
-        if (LoadGame("save.json", player, enemies, bullets, deathParticles, score))
+        const SaveResult r = LoadGame("save.json", player, enemies, bullets,
+            enemyBullets, deathParticles, score);
+        if (r)
         {
             gameOver = false;
             fireTimer = 0.0f;
-            std::cout << "Game Loaded" << std::endl;
+            dmgTimer = DMG_INTERVAL;
+            spawner.Reset(player.EnemyAmt);   // the spawner keeps its own copy of the enemy limit
+            std::cout << "Game loaded\n";
         }
         else
-        {
-            std::cout << "Load FAILED: save.json is missing or invalid" << std::endl;
-        }
+            std::cout << "Load FAILED: " << r.message << "\n";
     }
 };
