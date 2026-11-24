@@ -2,6 +2,7 @@
 
 #include <functional>
 #include <random>
+#include <fstream>
 
 #include "Assets.h"
 
@@ -15,4 +16,27 @@ struct GameContext
     bool          quit = false;          // set to true to leave the main loop
     std::function<void()> startGame;     // fresh PlayScene
     std::function<void()> goToMenu;      // back to MainMenuScene
+
+    int highScore = 0;
+
+    void LoadHighScore()
+    {
+        std::ifstream file("highscore.txt");
+        int savedScore = 0;
+
+        if (file >> savedScore && savedScore > highScore)
+            highScore = savedScore;
+    }
+
+    void UpdateHighScore(int score)
+    {
+        if (score <= highScore) return;
+
+        highScore = score;
+
+        std::ofstream file("highscore.txt");
+
+        if (file)
+            file << highScore << '\n';
+    }
 };

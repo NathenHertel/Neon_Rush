@@ -33,6 +33,7 @@ void RunWindow()
 
     // Declared in this order so scenes are destroyed before the things they point at.
     GameContext  ctx{ assets, rng };
+    ctx.LoadHighScore();
     SceneManager scenes;
 
     ctx.startGame = [&] { scenes.Reset<PlayScene>(ctx); };

@@ -97,6 +97,8 @@ public:
 
         PlayerProjectileCheck(enemyBullets, player, gameOver, dt);
 
+        ctx.UpdateHighScore(score);
+
         EnemyProjectileCheck(bullets,enemies,deathParticles,player,score,ctx.rng,player.damage,ctx.assets.EnemyDeath);
 
         ResetCollision(enemies, bullets, enemyBullets);
@@ -152,6 +154,24 @@ public:
             score, player.health, player.maxHealth, player.Level, player.EnemyAmt);
         DrawRectangle(5, 5, MeasureText(hud, 20) + 8, 24, BLACK);
         DrawText(hud, 6, 6, 20, GREEN);
+        const int highScoreFontSize = 24;
+        const int padding = 10;
+
+        const char* highScoreText =
+            TextFormat("High Score: %d", ctx.highScore);
+
+        const int highScoreWidth =
+            MeasureText(highScoreText, highScoreFontSize);
+
+        const int highScoreX =
+            screenWidth - padding - highScoreWidth;
+
+        DrawRectangle(highScoreX - 5, 5,
+            highScoreWidth + 10,
+            highScoreFontSize + 8, BLACK);
+
+        DrawText(highScoreText, highScoreX, 9,
+            highScoreFontSize, GOLD);
     }
 
 private:
