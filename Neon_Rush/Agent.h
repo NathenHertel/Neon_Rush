@@ -3,13 +3,14 @@
 #include "raylib.h"
 #include "raymath.h"
 #include "Projectile.h"
+#include "Player.h"
 
 #include <cmath>
 #include <iostream>
 #include <vector>
 
 // ----- Enum of All possible Enemy Types -----
-enum class EnemyType { Melee, Square, Ranged, Triangle, MiniBossH, MiniBossSp };
+enum class EnemyType { Melee, Square, Ranged, Triangle, MiniBossH, MiniBossSp, BigBoss };
 
 class AI_Agent
 {
@@ -40,7 +41,6 @@ public:
 
 	// --- Bool ---
 	bool active;
-	bool hasAura = false;
 
 	// --- Other ---
 	Vector2 _Pos{ 0.0f, 0.0f };
@@ -56,7 +56,7 @@ public:
 
 	virtual ~AI_Agent() {};
 
-	static void Update(float deltaTime, Vector2 playerPos, std::vector<AI_Agent>& Enemies, std::vector<Bullet>& EnemyBullets);
+	static void Update(float deltaTime, Vector2 playerPos, std::vector<AI_Agent>& Enemies, std::vector<Bullet>& EnemyBullets, Player& _player);
 	virtual void Draw(Texture texture, int screenWidth, int screenHeight);
 
 	virtual void drawAura();
@@ -73,6 +73,7 @@ public:
 
 	void SpeedAura(std::vector<AI_Agent>& Enemies);
 	void HealthAura(std::vector<AI_Agent>& Enemies);
+	void SlowAura(Player& _player);
 
 	void MoveToPlayer(Vector2& targetPos, float speed, float deltaTime);
 	void ShootAtPlayer(Vector2& targetPos, float deltaTime, std::vector<Bullet>& EnemyBullets);

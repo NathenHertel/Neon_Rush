@@ -24,8 +24,11 @@ Vector2 AI_Agent::GetPos()
 	return _Pos;
 }
 
-void AI_Agent::Update(float deltaTime, Vector2 playerPos, std::vector<AI_Agent>& Enemies, std::vector<Bullet>& EnemyBullets)
-{
+void AI_Agent::Update(float deltaTime, Vector2 playerPos, std::vector<AI_Agent>& Enemies, std::vector<Bullet>& EnemyBullets, Player& _player)
+	{
+
+	_player.SpeedMultiplier = 1.0f;
+
 	for (auto& enemy : Enemies)
 	{
 		enemy.speedMultiplier = 1.0f;
@@ -39,6 +42,12 @@ void AI_Agent::Update(float deltaTime, Vector2 playerPos, std::vector<AI_Agent>&
 			enemy.SpeedAura(Enemies);
 		if (enemy.type == EnemyType::MiniBossH)
 			enemy.HealthAura(Enemies);
+		if (enemy.type == EnemyType::BigBoss)
+		{
+			enemy.SlowAura(_player);
+			enemy.SpeedAura(Enemies);
+			enemy.HealthAura(Enemies);
+		}
 	}
 
 	for (auto& enemy : Enemies)
@@ -55,6 +64,7 @@ void AI_Agent::Update(float deltaTime, Vector2 playerPos, std::vector<AI_Agent>&
 		case EnemyType::Triangle:
 		case EnemyType::MiniBossH:
 		case EnemyType::MiniBossSp:
+		case EnemyType::BigBoss:
 			enemy.MoveToPlayer(playerPos, enemy.maxSpeed * enemy.speedMultiplier, deltaTime);
 			break;
 		}
@@ -137,9 +147,6 @@ void AI_Agent::SpeedAura(std::vector<AI_Agent>& Enemies)
 		float dy = other._Pos.y - _Pos.y;
 		float r = auraRadius + other._radius;
 
-		//if (dx * dx + dy * dy < r * r)
-		//	other.speedBonus += 50.0f;
-
 		if (dx * dx + dy * dy < r * r)
 		{
 			other.speedMultiplier = std::max(other.speedMultiplier, auraSpeedBoost);
@@ -157,13 +164,22 @@ void AI_Agent::HealthAura(std::vector<AI_Agent>& Enemies)
 		float dy = other._Pos.y - _Pos.y;
 		float r = auraRadius + other._radius;
 
-		//if (dx * dx + dy * dy < r * r)
-		//	other.speedBonus += 50.0f;
-
 		if (dx * dx + dy * dy < r * r)
 		{
 			other.healthMultiplier = std::max(other.healthMultiplier, auraHealthBoost);
 		}
+	}
+}
+
+void AI_Agent::SlowAura(Player& _player)
+{
+	float dx = _player._pos.x - _Pos.x;
+	float dy = _player._pos.y - _Pos.y;
+	float r = auraRadius + _player._radius;
+
+	if (dx * dx + dy * dy < r * r)
+	{
+		_player.SpeedMultiplier = std::min(_player.SpeedMultiplier, 0.5f);
 	}
 }
 

@@ -18,6 +18,8 @@ public:
 	EnemySpawner(float interval, int maxEnemies);
 
 	void SpawnMiniBoss() { MiniBossSpawn = true; }
+	void SpawnBigBoss() { BigBossSpawn = true; }
+
 
 	void Update(float deltaTime, std::vector<AI_Agent>& enemies, std::mt19937& gen);
 	void Reset(int maxEn) 
@@ -42,6 +44,7 @@ private:
 	std::discrete_distribution<int> typeChance{ 40, 20, 25, 15 };
 
 	bool MiniBossSpawn = false;
+	bool BigBossSpawn = false;
 
 	float timerCircle = 0.0f;
 	float timerSquare = 0.0f;

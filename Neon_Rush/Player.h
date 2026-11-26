@@ -14,6 +14,8 @@ public:
 	Vector2 pivot;
 	Vector2 v1, v2, v3;
 
+	Vector2 dir{ 0.0f, 0.0f };
+
 	float health = 9.0f;
 	float maxHealth = 9.0f;
 	static constexpr float baseHealth = 9.0f;
@@ -62,6 +64,8 @@ public:
 	float _radius = 20.0f;
 	float _exp = 0.0f;
 	float requiredExp = 100.0f;
+
+	float SpeedMultiplier = 1.0f;
 
 	void setHealth(int damage);
 

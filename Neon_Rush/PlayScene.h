@@ -98,7 +98,7 @@ public:
             b.Update(dt, screenWidth, screenHeight);
 
         // ----- AI + collision -----
-        AI_Agent::Update(dt, player._pos, enemies, enemyBullets);
+        AI_Agent::Update(dt, player._pos, enemies, enemyBullets, player);
 
         PlayerProjectileCheck(enemyBullets, player, gameOver, dt);
 
@@ -123,15 +123,19 @@ public:
         else if (player.levelUp)
         {
             int next = player.level + 1;
-            if (next % 5 == 0)
+            if (next % 3 == 0)
             {
-                std::cout << "scaled" << std::endl;
                 spawner.ScaleAllEnemies(enemies, spawner);
             }
 
             if (next % 5 == 0)
             {
                 spawner.SpawnMiniBoss();
+            }
+
+            if (next % 10 == 0)
+            {
+                spawner.SpawnBigBoss();
             }
             
             scenes->Push<LevelUpScene>(player, spawner, ctx.assets.font);
@@ -154,6 +158,8 @@ public:
                 enemy.drawAura();
             if (enemy.active && enemy.type == EnemyType::MiniBossH)
                 enemy.drawAura();
+            if (enemy.active && enemy.type == EnemyType::BigBoss)
+                enemy.drawAura();
         }
 
         for (auto& e : enemies)
@@ -166,7 +172,7 @@ public:
                 e.DrawSquare();
                 break;
             case EnemyType::Triangle:
-                e.DrawTriangle();   // whatever you named the triangle draw function
+                e.DrawTriangle();
                 break;
             case EnemyType::Melee:
                 e.Draw(ctx.assets.enemy, screenWidth, screenHeight);
@@ -178,6 +184,9 @@ public:
                 e.DrawSquare();
                 break;
             case EnemyType::MiniBossSp:
+                e.DrawSquare();
+                break;
+            case EnemyType::BigBoss:
                 e.DrawSquare();
                 break;
             }

@@ -123,22 +123,22 @@ void Player::DrawPlayer(Texture texture)
 void Player::HandleMovement(float deltaTime)
 {
 	// ---------- MOVEMENT ----------
-
+	float EffectiveSpeed = playerSpeed * SpeedMultiplier;
 	// ----- RIGHT -----
-	if (IsKeyDown(KEY_RIGHT)) _pos.x += playerSpeed;
-	else if (IsKeyDown(KEY_D)) _pos.x += playerSpeed;
+	if (IsKeyDown(KEY_RIGHT)) _pos.x += EffectiveSpeed;
+	else if (IsKeyDown(KEY_D)) _pos.x += EffectiveSpeed;
 
 	// ----- LEFT -----
-	if (IsKeyDown(KEY_LEFT)) _pos.x -= playerSpeed;
-	else if (IsKeyDown(KEY_A)) _pos.x -= playerSpeed;
+	if (IsKeyDown(KEY_LEFT)) _pos.x -= EffectiveSpeed;
+	else if (IsKeyDown(KEY_A)) _pos.x -= EffectiveSpeed;
 
 	// ----- UP -----
-	if (IsKeyDown(KEY_UP)) _pos.y -= playerSpeed;
-	else if (IsKeyDown(KEY_W)) _pos.y -= playerSpeed;
+	if (IsKeyDown(KEY_UP)) _pos.y -= EffectiveSpeed;
+	else if (IsKeyDown(KEY_W)) _pos.y -= EffectiveSpeed;
 
 	// ----- DOWN -----
-	if (IsKeyDown(KEY_DOWN)) _pos.y += playerSpeed;
-	else if (IsKeyDown(KEY_S)) _pos.y += playerSpeed;
+	if (IsKeyDown(KEY_DOWN)) _pos.y += EffectiveSpeed;
+	else if (IsKeyDown(KEY_S)) _pos.y += EffectiveSpeed;
 
 	_pos.x = Clamp(_pos.x, _radius, screenWidth - _radius);
 	_pos.y = Clamp(_pos.y, _radius, screenHeight - _radius);

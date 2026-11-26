@@ -37,9 +37,22 @@ AI_Agent EnemySpawner::MakeEnemy(std::mt19937& gen)
 
 	if (MiniBossSpawn)
 	{
-		std::uniform_int_distribution<int> pick(0, 1);
-		agent.type = (pick(gen) == 0) ? EnemyType::MiniBossH : EnemyType::MiniBossSp;
-		MiniBossSpawn = false;
+		if (BigBossSpawn)
+		{
+			MiniBossSpawn = false;
+			return;
+		}
+		else
+		{
+			std::uniform_int_distribution<int> pick(0, 1);
+			agent.type = (pick(gen) == 0) ? EnemyType::MiniBossH : EnemyType::MiniBossSp;
+			MiniBossSpawn = false;
+		}
+	}
+	else if (BigBossSpawn)
+	{
+		agent.type = EnemyType::BigBoss;
+		BigBossSpawn = false;
 	}
 	else
 	{
@@ -86,7 +99,6 @@ AI_Agent EnemySpawner::MakeEnemy(std::mt19937& gen)
 		agent.pointVal = 250;
 		agent.maxSpeed = 50.0f;
 		agent._radius = 40.0f;
-		agent.hasAura = true;
 		agent._colour = PURPLE;
 		break;
 	case EnemyType::MiniBossSp:
@@ -95,8 +107,15 @@ AI_Agent EnemySpawner::MakeEnemy(std::mt19937& gen)
 		agent.pointVal = 150;
 		agent.maxSpeed = 400.0f;
 		agent._radius = 40.0f;
-		agent.hasAura = true;
 		agent._colour = SKYBLUE;
+		break;
+	case EnemyType::BigBoss:
+		agent.Health = 100.0f;
+		agent.damage = 10.0f;
+		agent.pointVal = 500;
+		agent.maxSpeed = 30.0f;
+		agent._radius = 50.0f;
+		agent._colour = BROWN;
 		break;
 	}
 
