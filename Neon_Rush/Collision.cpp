@@ -10,40 +10,13 @@ void PlayerProjectileCheck(std::vector<Bullet>& enemyBullets, Player& player, bo
         {
             if (!b._disabled && CheckCollisionCircles(b._pos, b._radius, player._pos, player._radius))
             {
-
-                // ----- Disable Enemy Bullet -----
                 b._disabled = true;
-
-                // ----- Deal Damage To Player -----
-                // & check if player is dead
-                int dealt = static_cast<int>(std::round(b.damage));
-                player.setHealth(dealt);
-                if (player.health <= 0)
-                {
-                    if (!player.hasExtraLife)
-                    {
-                        _gameOver = true;
-                    }
-                    else
-                    {
-                        std::cout << "You have a second chance" << std::endl;
-                        player.health = player.maxHealth;
-                        player.hasExtraLife = false;
-                    }
-
-                    continue;
-                }
+                player.TakeDamage(b.damage);
+                if (player.dead) _gameOver = true;
+            
             }
         }
-        else
-        {
-            if (!b._disabled && CheckCollisionCircles(b._pos, b._radius, player._pos, player._radius))
-            {
-                std::cout << "shield hit by BULLET, now " << player.shieldAmt << std::endl;
-                b._disabled = true;
-                player.shieldAmt -= 1;
-            }
-        }
+        
     }
 }
 
@@ -123,33 +96,8 @@ void EnemyDamage(bool& gameOver, std::vector<AI_Agent>& enemies, Player& player,
 
         if (a.CheckOverlapWithOtherAgent(AIpos1, player._pos, a._radius, player._radius))
         {
-            if (player.shieldAmt <= 0)
-            {
-                int dealt = static_cast<int>(std::round(a.damage));
-                player.setHealth(dealt);
-
-                if (player.health <= 0)
-                {
-                    if (!player.hasExtraLife)
-                    {
-                        PlaySound(enemyVoice);
-                        gameOver = true;
-                    }
-                    else
-                    {
-                        std::cout << "You have a second chance" << std::endl;
-                        player.health = player.maxHealth;
-                        player.hasExtraLife = false;
-                    }
-
-                    break;
-                }
-            }
-            else
-            {
-                std::cout << "shield hit by ENEMY, now " << player.shieldAmt << std::endl;
-                player.shieldAmt -= 1;
-            }
+            player.TakeDamage(a.damage);
+            if (player.dead) { PlaySound(enemyVoice); gameOver = true; break; }
         }
     }
 }

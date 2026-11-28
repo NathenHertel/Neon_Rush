@@ -2,16 +2,19 @@
 
 void LvlUp(Player* player, float exp)
 {
-	player->_exp = player->_exp + exp;
+    player->_exp += exp;
 
-	if (player->_exp >= player->requiredExp)
-	{
-		player->maxHealth = player->maxHealth * 1.10f;
-		player->health = player->maxHealth;
-		player->_exp = player->_exp - player->requiredExp;
-		player->requiredExp = player->requiredExp * 1.5f;
-		player->levelUp = true;
-	}
+    while (player->_exp >= player->requiredExp)
+    {
+        player->_exp -= player->requiredExp;
+        player->requiredExp *= Balance::EXP_GROWTH;
+
+        player->level += 1;
+        player->maxHealth += Balance::HP_PER_LEVEL;
+        player->health = std::min(player->maxHealth, player->health + Balance::HEAL_PER_LEVEL);
+
+        player->levelUp = true;
+    }
 }
 
 void DrawLevelUpMenu(Player* player, Vector2 mousePos, int screenWidth, int screenHeight, Font font)

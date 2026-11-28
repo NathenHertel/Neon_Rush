@@ -4,16 +4,20 @@
 #include "Config.h"
 #include "SceneManager.h"
 #include "GameContext.h"
+#include "GamepadInput.h"
 #include "MenuUI.h"
 
 class PauseScene : public Scene
 {
     GameContext& ctx;
+    const char* status = nullptr;
+    float statusTimer = 0.0f;
+    int selected = 0;
 
     static Rectangle CenteredButton(int index, float w, float h)
     {
         const float gap = 15;
-        const float count = 3;
+        const float count = 4;
         const float totalH = count * h + (count - 1) * gap;
 
         return {
@@ -24,8 +28,9 @@ class PauseScene : public Scene
     }
 
     static Rectangle FullscreenButton() { return CenteredButton(0, 220, 40); }
-    static Rectangle MainMenuButton() { return CenteredButton(1, 220, 40); }
-    static Rectangle QuitButton() { return CenteredButton(2, 220, 40); }
+    static Rectangle SaveButton() { return CenteredButton(1, 220, 40); }
+    static Rectangle MainMenuButton() { return CenteredButton(2, 220, 40); }
+    static Rectangle QuitButton() { return CenteredButton(3, 220, 40); }
 
     static void DrawTextCentered(const Font& font, const char* text, Rectangle rect,
         float fontSize, float spacing, Color color)
@@ -53,13 +58,26 @@ public:
 
     bool IsOverlay() const override { return true; }
 
-    void Update(float) override
+    void Update(float dt) override
     {
-        if (IsKeyPressed(KEY_ESCAPE)) { scenes->Pop(); return; }
+        if (IsKeyPressed(KEY_ESCAPE) || Pad::Start() || Pad::B()) { scenes->Pop(); return; }
 
-        if (Clicked(FullscreenButton())) ToggleBorderlessWindowed();
-        if (Clicked(MainMenuButton())) { ctx.goToMenu(); return; }
-        if (Clicked(QuitButton()))       ctx.quit = true;
+        if (statusTimer > 0.0f) statusTimer -= dt;
+
+        if (Pad::Pressed(GAMEPAD_BUTTON_LEFT_FACE_DOWN)) selected = (selected + 1) % 4;
+        if (Pad::Pressed(GAMEPAD_BUTTON_LEFT_FACE_UP))   selected = (selected + 3) % 4;
+        const bool pick = Pad::A();
+
+        if (Clicked(FullscreenButton()) || (pick && selected == 0)) ToggleBorderlessWindowed();
+
+        if ((Clicked(SaveButton()) || (pick && selected == 1)) && ctx.saveGame)
+        {
+            status = ctx.saveGame() ? "Game saved" : "Save failed";
+            statusTimer = 2.0f;
+        }
+
+        if (Clicked(MainMenuButton()) || (pick && selected == 2)) { ctx.goToMenu(); return; }
+        if (Clicked(QuitButton()) || (pick && selected == 3))     ctx.quit = true;
     }
 
     void Render() override
@@ -77,7 +95,11 @@ public:
         DrawTextEx(ctx.assets.font, title, { titleX, titleY }, titleSize, spacing, WHITE);
 
         DrawButton(FullscreenButton(), "FullScreen", buttonFontSize, spacing);
+        DrawButton(SaveButton(), "Save Game", buttonFontSize, spacing);
         DrawButton(MainMenuButton(), "Main Menu", buttonFontSize, spacing);
         DrawButton(QuitButton(), "Quit", buttonFontSize, spacing);
+
+        if (Pad::Available())
+            DrawRectangleLinesEx(CenteredButton(selected, 220, 40), 3.0f, YELLOW);
     }
 };

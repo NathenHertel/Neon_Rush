@@ -3,6 +3,7 @@
 #include "raymath.h"
 #include "Projectile.h"
 #include "Config.h"
+#include "Balance.h"
 
 #include <iostream>
 #include <vector>
@@ -32,12 +33,21 @@ public:
 
 	int level = 0;
 
-	bool rapidFireActive;
-	bool tripleShotActive;
+	bool rapidFireActive = false;
+	bool tripleShotActive = false; //changed to permanent powerup, can be removed if needed
+	int tripleLevel = 0;      // 0 = single shot, each level adds 2 bullets
 
 	int score = 0;
 	bool levelUp = false;
 	int shieldAmt = 0;
+
+	bool  dead = false;
+	int   rapidLevel = 0;               // permanent rapid-fire purchases
+
+	float shield = Balance::SHIELD_BASE;
+	float shieldMax = Balance::SHIELD_BASE;
+	float shieldCooldownTimer = 0.0f;   // > 0 while recharging
+	float waveCooldownTimer = 0.0f;     // 0 = ready
 
 	bool spawnMiniBoss = false;
 
@@ -64,6 +74,9 @@ public:
 	float requiredExp = 100.0f;
 
 	void setHealth(int damage);
+
+	void TakeDamage(float dmg);
+	bool TryWaveClear();
 
 	void UpdateAim(Vector2 mousePos);
 

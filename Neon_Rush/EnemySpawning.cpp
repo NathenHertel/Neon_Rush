@@ -51,7 +51,7 @@ AI_Agent EnemySpawner::MakeEnemy(std::mt19937& gen)
 	case EnemyType::Melee:
 		agent.Health = 12.0f;
 		agent.damage = 1.0f;
-		agent.pointVal = 35;
+		agent.pointVal = 50;
 		agent.maxSpeed = 200.0f;
 		agent._radius = 20.0f;
 		// No Colour needed
@@ -59,7 +59,7 @@ AI_Agent EnemySpawner::MakeEnemy(std::mt19937& gen)
 	case EnemyType::Square:
 		agent.Health = 25.0f;
 		agent.damage = 3.0f;
-		agent.pointVal = 50;
+		agent.pointVal = 100;
 		agent.maxSpeed = 50.0f;
 		agent._radius = 20.0f;
 		agent._colour = ORANGE;
@@ -67,7 +67,7 @@ AI_Agent EnemySpawner::MakeEnemy(std::mt19937& gen)
 	case EnemyType::Ranged:
 		agent.Health = 10.0f;
 		agent.damage = 1.0f;
-		agent.pointVal = 25;
+		agent.pointVal = 50;
 		agent.maxSpeed = 200.0f;
 		agent._radius = 20.0f;
 		// No Colour needed
@@ -75,7 +75,7 @@ AI_Agent EnemySpawner::MakeEnemy(std::mt19937& gen)
 	case EnemyType::Triangle:
 		agent.Health = 1.0f;
 		agent.damage = 2.0f;
-		agent.pointVal = 25;
+		agent.pointVal = 50;
 		agent.maxSpeed = 400.0f;
 		agent._radius = 20.0f;
 		agent._colour = RED;
@@ -83,7 +83,7 @@ AI_Agent EnemySpawner::MakeEnemy(std::mt19937& gen)
 	case EnemyType::MiniBossH:
 		agent.Health = 50.0f;
 		agent.damage = 5.0f;
-		agent.pointVal = 250;
+		agent.pointVal = 1000;
 		agent.maxSpeed = 50.0f;
 		agent._radius = 40.0f;
 		agent.hasAura = true;
@@ -92,7 +92,7 @@ AI_Agent EnemySpawner::MakeEnemy(std::mt19937& gen)
 	case EnemyType::MiniBossSp:
 		agent.Health = 50.0f;
 		agent.damage = 5.0f;
-		agent.pointVal = 150;
+		agent.pointVal = 1000;
 		agent.maxSpeed = 400.0f;
 		agent._radius = 40.0f;
 		agent.hasAura = true;
@@ -100,8 +100,10 @@ AI_Agent EnemySpawner::MakeEnemy(std::mt19937& gen)
 		break;
 	}
 
-	for (int i = 0; i < scaleCount; i++)
-		agent.Scaling();
+	// for (int i = 0; i < scaleCount; i++)
+	// 	agent.Scaling();
+
+	agent.ApplyDifficulty(level);
 
 	agent.active = true;
 	return agent;

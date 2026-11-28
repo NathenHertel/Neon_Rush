@@ -17,7 +17,7 @@
 void RunWindow()
 {
     SetConfigFlags(FLAG_MSAA_4X_HINT | FLAG_VSYNC_HINT);
-    InitWindow(screenWidth, screenHeight, "Neon Rush");
+    InitWindow(windowWidth, windowHeight, "Neon Rush");
     InitAudioDevice();
     Music backgroundMusic = LoadMusicStream("Music/BackgroundMusic.mp3");
     backgroundMusic.looping = true;

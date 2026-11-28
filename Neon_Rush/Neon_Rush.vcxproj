@@ -165,6 +165,8 @@
     <ClInclude Include="EnemySpawning.h" />
     <ClInclude Include="Gamecontext.h" />
     <ClInclude Include="GameOverScene.h" />
+    <ClInclude Include="GamepadInput.h" />
+    <ClInclude Include="Hud.h" />
     <ClInclude Include="LevelUp.h" />
     <ClInclude Include="LevelUpScene.h" />
     <ClInclude Include="MainMenuScene.h" />

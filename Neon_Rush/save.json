@@ -2,82 +2,93 @@
   "bullets": [],
   "enemies": [
     {
-      "active": true,
-      "colour": {
-        "a": 255,
-        "b": 241,
-        "g": 121,
-        "r": 0
-      },
-      "maxSpeed": 150.0,
+      "health": 5.59999942779541,
+      "maxHealth": 15.59999942779541,
+      "maxSpeed": 200.0,
       "pos": {
-        "x": 424.4483947753906,
-        "y": 535.4368896484375
+        "x": 707.4887084960938,
+        "y": 444.6268615722656
       },
-      "radius": 20.0
+      "radius": 20.0,
+      "type": "Melee"
     },
     {
-      "active": true,
-      "colour": {
-        "a": 255,
-        "b": 241,
-        "g": 121,
-        "r": 0
-      },
-      "maxSpeed": 150.0,
+      "health": 27.5,
+      "maxHealth": 32.5,
+      "maxSpeed": 50.0,
       "pos": {
-        "x": 1090.55419921875,
-        "y": 683.5802612304688
+        "x": 616.7112426757813,
+        "y": 402.0277099609375
       },
-      "radius": 20.0
+      "radius": 20.0,
+      "type": "Square"
     },
     {
-      "active": true,
-      "colour": {
-        "a": 255,
-        "b": 241,
-        "g": 121,
-        "r": 0
-      },
-      "maxSpeed": 150.0,
+      "health": 27.5,
+      "maxHealth": 32.5,
+      "maxSpeed": 50.0,
       "pos": {
-        "x": 438.60980224609375,
-        "y": 324.9697570800781
+        "x": 559.6985473632813,
+        "y": 450.3443908691406
       },
-      "radius": 20.0
+      "radius": 20.0,
+      "type": "Square"
     },
     {
-      "active": true,
-      "colour": {
-        "a": 255,
-        "b": 241,
-        "g": 121,
-        "r": 0
-      },
-      "maxSpeed": 150.0,
+      "health": 5.59999942779541,
+      "maxHealth": 15.59999942779541,
+      "maxSpeed": 200.0,
       "pos": {
-        "x": 696.6812133789063,
-        "y": 197.42872619628906
+        "x": 737.6011352539063,
+        "y": 470.95635986328125
       },
-      "radius": 20.0
+      "radius": 20.0,
+      "type": "Melee"
+    },
+    {
+      "health": 32.5,
+      "maxHealth": 32.5,
+      "maxSpeed": 50.0,
+      "pos": {
+        "x": 334.1318054199219,
+        "y": 496.6530456542969
+      },
+      "radius": 20.0,
+      "type": "Square"
     }
   ],
+  "enemyBullets": [],
+  "particles": [],
   "player": {
-    "amountOfShots": 0,
-    "delayBetweenShots": 0.10000000149011612,
-    "exp": 243.5203857421875,
-    "health": 1004,
-    "level": 3,
-    "levelUp": false,
-    "masterAmount": 1,
-    "max health": 1016,
+    "damage": 5.0,
+    "enemyAmt": 5,
+    "exp": 98.07454681396484,
+    "extraLife": false,
+    "health": 14.0,
+    "level": 5,
+    "maxHealth": 14.0,
+    "playerSpeed": 10.0,
+    "points": 385,
     "pos": {
-      "x": 1090.0,
-      "y": 680.0
+      "x": 1240.0,
+      "y": 180.0
     },
-    "radius": 40.0,
-    "requiredExp": 3844.3359375
+    "rapidLevel": 1,
+    "requiredExp": 305.17578125,
+    "shield": 4.0,
+    "shieldCooldown": 0.0,
+    "shieldMax": 4.0,
+    "shopCosts": [
+      700,
+      1500,
+      500,
+      700,
+      600,
+      2000
+    ],
+    "tripleShot": false,
+    "waveCooldown": 28.495647430419922
   },
-  "score": 350,
-  "version": 1
+  "score": 510,
+  "version": 3
 }

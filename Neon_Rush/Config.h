@@ -1,7 +1,12 @@
 #pragma once
 
-constexpr int screenWidth = 1280;
-constexpr int screenHeight = 720;
+// Real window size (pixels on your monitor)
+constexpr int windowWidth = 1280;
+constexpr int windowHeight = 720;
+
+// Game world size (the playable map). Zoom = window / world.
+constexpr int screenWidth = 1600;
+constexpr int screenHeight = 900;
 
 constexpr float size = 45.0f;
 

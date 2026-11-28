@@ -1,38 +1,5 @@
 #pragma once
 
-// =============================================================================
-
-// WHAT IS SAVED
-//   Player          position, health, maxHealth, level, enemyAmt, damage,
-//                   fireInterval, exp, requiredExp          (your upgrades)
-//   Enemies         type, position, radius, health, maxHealth, maxSpeed
-//   Bullets         position, velocity, radius, colour      (the player's)
-//   Enemy bullets   same as bullets                         (fired by Ranged enemies)
-//   Particles       all of their values                     (cosmetic, but you asked for them)
-//   Score
-//
-// 
-// WHAT IS NOT SAVED  (reset when you load)
-//   levelUp / gameOver     overlay screens: you cannot save while one is open 
-//   (want to add an autosave feature on level-up screen, and resume from UI from load game)
-// 
-//   bulletsToSpawn         mid-burst state, set to 0
-//   fireTimer / dmgTimer   restart after loading
-//   enemy shootTimer       restarts, so Ranged enemies may fire right after a load
-//   enemy "active"         every saved enemy is alive, so it is set to true
-//   bullet "disabled"      disabled bullets are deleted every frame, so never saved
-//   player radius, aim triangle, textures      set up by PlayScene / every frame
-//
-// 
-// HOW IT WORKS
-//   SaveGame  builds the JSON, checks the game could load it back, then writes
-//             it to "<path>.tmp" and swaps it into place. A save that could not
-//             be loaded again is never written.
-//   LoadGame  checks the file is not huge, is valid JSON, is the right version,
-//             and that EVERY value exists, has the right type and is in range.
-//             Your game is only changed if the whole file is good.
-// =============================================================================
-
 #include "raylib.h"
 #include "Agent.h"        // AI_Agent, EnemyType
 #include "Player.h"
@@ -50,13 +17,14 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
+#include <algorithm>
 
 using json = nlohmann::json;
 
-constexpr int SAVE_VERSION = 2;
+constexpr int SAVE_VERSION = 3;
+extern int itemCost[6];     // defined in Shop.cpp; saved so shop prices match your upgrades
 
-// Limits used when loading. They are far above anything the game can make, so a
-// real save never hits them, but a corrupt or hand-edited one will.
+
 namespace SaveLimits
 {
     constexpr std::size_t MAX_ENEMIES = 1000;
@@ -115,6 +83,8 @@ inline const char* EnemyTypeName(EnemyType t)
     case EnemyType::Square:   return "Square";
     case EnemyType::Ranged:   return "Ranged";
     case EnemyType::Triangle: return "Triangle";
+    case EnemyType::MiniBossH:  return "MiniBossH";
+    case EnemyType::MiniBossSp: return "MiniBossSp";
     }
     return "Unknown";
 }
@@ -122,15 +92,24 @@ inline const char* EnemyTypeName(EnemyType t)
 inline void to_json(json& j, const Player& p)
 {
     j = json{
-        {"pos",          p._pos},
-        {"health",       p.health},
-        {"maxHealth",    p.maxHealth},
-        {"level",        p.level},
-        {"enemyAmt",     p.EnemyAmt},
-        {"damage",       p.damage},
-        {"fireInterval", p.fireInterval},
-        {"exp",          p._exp},
-        {"requiredExp",  p.requiredExp}
+    {"pos",            p._pos},
+    {"health",         p.health},
+    {"maxHealth",      p.maxHealth},
+    {"level",          p.level},
+    {"enemyAmt",       p.EnemyAmt},
+    {"damage",         p.damage},
+    {"playerSpeed",    p.playerSpeed},
+    {"exp",            p._exp},
+    {"requiredExp",    p.requiredExp},
+    {"shield",         p.shield},
+    {"shieldMax",      p.shieldMax},
+    {"shieldCooldown", p.shieldCooldownTimer},
+    {"waveCooldown",   p.waveCooldownTimer},
+    {"extraLife",      p.hasExtraLife},
+    {"tripleShot",     p.tripleShotActive},
+    {"rapidLevel",     p.rapidLevel},
+    {"points",         p.points},
+    {"shopCosts",      std::vector<int>(itemCost, itemCost + 6)}
     };
 }
 
@@ -152,7 +131,8 @@ inline void to_json(json& j, const Bullet& b)
         {"pos",    b._pos},
         {"vel",    b._vel},
         {"radius", b._radius},
-        {"colour", b._colour}
+        {"colour", b._colour},
+		{"damage", b.damage}
     };
 }
 
@@ -280,6 +260,14 @@ namespace save_detail
         }
     }
 
+    // Reads a true/false value, or throws.
+    inline bool ReadBool(const json& j, const char* key)
+    {
+        const json& v = Field(j, key);
+        if (!v.is_boolean()) throw SaveError(Quote(key) + " must be true or false, found " + Show(v));
+        return v.get<bool>();
+    }
+
     inline EnemyType ReadEnemyType(const json& j)
     {
         const json& v = Field(j, "type");
@@ -290,6 +278,8 @@ namespace save_detail
             if (s == "Square")   return EnemyType::Square;
             if (s == "Ranged")   return EnemyType::Ranged;
             if (s == "Triangle") return EnemyType::Triangle;
+            if (s == "MiniBossH")  return EnemyType::MiniBossH;
+            if (s == "MiniBossSp") return EnemyType::MiniBossSp;
         }
         throw SaveError("\"type\" must be \"Melee\", \"Square\", \"Ranged\" or \"Triangle\", found " + Show(v));
     }
@@ -297,18 +287,17 @@ namespace save_detail
     // ----- one Parse function per kind of object -----
 
     // Only the saved player values. LoadGame copies them onto your real Player,
-    // so the parts we do not save (radius, aim, textures) are left alone.
     struct PlayerData
     {
         Vector2 pos = { 0.0f, 0.0f };
-        int     health = 1;
-        int     maxHealth = 1;
-        int     level = 0;
-        int     enemyAmt = 5;
-        int     damage = 1;
-        float   fireInterval = 1.0f;
-        float   exp = 0.0f;
-        float   requiredExp = 100.0f;
+        float health = 1.0f, maxHealth = 1.0f;
+        int   level = 0, enemyAmt = 3;
+        float damage = 1.0f, playerSpeed = 10.0f;
+        float exp = 0.0f, requiredExp = 100.0f;
+        float shield = 0.0f, shieldMax = 1.0f, shieldCooldown = 0.0f, waveCooldown = 0.0f;
+        bool  extraLife = false, tripleShot = false;
+        int   rapidLevel = 0, points = 0;
+        int   shopCosts[6] = {};
     };
 
     inline PlayerData ParsePlayer(const json& j)
@@ -317,17 +306,38 @@ namespace save_detail
 
         PlayerData p;
         p.pos = ReadVec2(j, "pos", MAX_COORD);
-        p.maxHealth = Number<int>(j, "maxHealth", 1, MAX_STAT);
-        p.health = Number<int>(j, "health", 1, MAX_STAT);       // 0 = dead, and dead is never saved
+        p.maxHealth = Number<float>(j, "maxHealth", 1.0f, (float)MAX_STAT);
+        p.health = Number<float>(j, "health", 0.0001f, (float)MAX_STAT);   // 0 = dead, never saved
         if (p.health > p.maxHealth)
-            throw SaveError("\"health\" (" + std::to_string(p.health) +
-                ") is higher than \"maxHealth\" (" + std::to_string(p.maxHealth) + ")");
+            throw SaveError("\"health\" is higher than \"maxHealth\"");
         p.level = Number<int>(j, "level", 0, MAX_STAT);
         p.enemyAmt = Number<int>(j, "enemyAmt", 1, static_cast<int>(MAX_ENEMIES));
-        p.damage = Number<int>(j, "damage", 1, MAX_STAT);
-        p.fireInterval = Number<float>(j, "fireInterval", 0.0f, 60.0f);
+        p.damage = Number<float>(j, "damage", 0.1f, (float)MAX_STAT);
+        p.playerSpeed = Number<float>(j, "playerSpeed", 0.0f, 1000.0f);
         p.exp = Number<float>(j, "exp", 0.0f, MAX_EXP);
         p.requiredExp = Number<float>(j, "requiredExp", 1.0f, MAX_EXP);
+
+        p.shieldMax = Number<float>(j, "shieldMax", 0.0f, 1000.0f);
+        p.shield = Number<float>(j, "shield", 0.0f, 1000.0f);
+        if (p.shield > p.shieldMax)
+            throw SaveError("\"shield\" is higher than \"shieldMax\"");
+        p.shieldCooldown = Number<float>(j, "shieldCooldown", 0.0f, Balance::SHIELD_COOLDOWN);
+        p.waveCooldown = Number<float>(j, "waveCooldown", 0.0f, Balance::WAVE_CLEAR_COOLDOWN);
+
+        p.extraLife = ReadBool(j, "extraLife");
+        p.tripleShot = ReadBool(j, "tripleShot");
+        p.rapidLevel = Number<int>(j, "rapidLevel", 0, 100);
+        p.points = Number<int>(j, "points", 0, MAX_STAT);
+
+        const json& costs = Field(j, "shopCosts");
+        if (!costs.is_array() || costs.size() != 6)
+            throw SaveError("\"shopCosts\" must be a list of 6 whole numbers");
+        for (int i = 0; i < 6; ++i)
+        {
+            if (!costs[i].is_number_integer() || costs[i].get<int>() < 1 || costs[i].get<int>() > MAX_STAT)
+                throw SaveError("\"shopCosts\" has a bad value at position " + std::to_string(i));
+            p.shopCosts[i] = costs[i].get<int>();
+        }
         return p;
     }
 
@@ -339,8 +349,8 @@ namespace save_detail
         a.type = ReadEnemyType(j);
         a._Pos = ReadVec2(j, "pos", MAX_COORD);
         a._radius = Number<float>(j, "radius", 1.0f, MAX_RADIUS);
-        a.maxHealth = Number<int>(j, "maxHealth", 1, MAX_STAT);
-        a.Health = Number<int>(j, "health", 1, MAX_STAT);          // 0 = dead, deleted every frame
+        a.maxHealth = Number<float>(j, "maxHealth", 1.0f, (float)MAX_STAT);
+        a.Health = Number<float>(j, "health", 0.0001f, (float)MAX_STAT);          // 0 = dead, deleted every frame
         if (a.Health > a.maxHealth)
             throw SaveError("\"health\" (" + std::to_string(a.Health) +
                 ") is higher than \"maxHealth\" (" + std::to_string(a.maxHealth) + ")");
@@ -359,6 +369,7 @@ namespace save_detail
         b._vel = ReadVec2(j, "vel", MAX_SPEED);
         b._radius = Number<float>(j, "radius", 1.0f, MAX_RADIUS);
         b._colour = ReadColor(j, "colour");
+        b.damage = Number<float>(j, "damage", 0.0f, (float)MAX_STAT);
         b._disabled = false;       // not saved: disabled bullets are deleted every frame
         return b;
     }
@@ -558,17 +569,29 @@ inline SaveResult LoadGame(const std::string& path,
 
     // Everything checked out: only now change the real game.
     const save_detail::PlayerData& d = loaded.player;
+    
     player._pos = d.pos;
     player.health = d.health;
     player.maxHealth = d.maxHealth;
     player.level = d.level;
     player.EnemyAmt = d.enemyAmt;
     player.damage = d.damage;
-    player.fireInterval = d.fireInterval;
+    player.playerSpeed = d.playerSpeed;
     player._exp = d.exp;
     player.requiredExp = d.requiredExp;
-    player.levelUp = false;   // not saved: you cannot save while the level-up screen is open
-    player.bulletsToSpawn = 0;       // not saved: mid-burst state
+    player.shieldMax = d.shieldMax;
+    player.shield = d.shield;
+    player.shieldCooldownTimer = d.shieldCooldown;
+    player.waveCooldownTimer = d.waveCooldown;
+    player.hasExtraLife = d.extraLife;
+    player.tripleShotActive = d.tripleShot;
+    player.rapidLevel = d.rapidLevel;
+    player.points = d.points;
+    for (int i = 0; i < 6; ++i) itemCost[i] = d.shopCosts[i];
+
+    player.dead = false;
+    player.levelUp = false;
+    player.bulletsToSpawn = 0;
 
     enemies = std::move(loaded.enemies);
     bullets = std::move(loaded.bullets);

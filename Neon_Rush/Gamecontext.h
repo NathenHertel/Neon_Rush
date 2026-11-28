@@ -16,6 +16,9 @@ struct GameContext
     bool          quit = false;          // set to true to leave the main loop
     std::function<void()> startGame;     // fresh PlayScene
     std::function<void()> goToMenu;      // back to MainMenuScene
+    
+    bool loadOnStart = false;            // main menu sets this, PlayScene reads it
+    std::function<bool()> saveGame;      // PlayScene fills this in, PauseScene calls it
 
     int highScore = 0;
 

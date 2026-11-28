@@ -14,6 +14,9 @@
 #include "EnemySpawning.h"
 #include "Collision.h"
 #include "Serialization.h"
+#include "Balance.h"
+#include "Hud.h"
+#include "GamepadInput.h"
 
 #include "SceneManager.h"
 #include "GameContext.h"
@@ -47,6 +50,15 @@ class PlayScene : public Scene
     float fireTimer = 0.0f;
     float dmgTimer = DMG_INTERVAL;
 
+    float   waveFx = 0.6f;          // >= 0.6 means "not playing"
+    Vector2 waveFxPos{ 0, 0 };
+    float   bannerTimer = 0.0f;
+
+    bool    usingPad = false;
+    Vector2 padAim{ 0.0f, -1.0f };      // last right-stick direction
+
+
+
 public:
 
     explicit PlayScene(GameContext& c)
@@ -55,14 +67,40 @@ public:
         ctx.finalScore = 0;
         player._pos = { screenWidth / 2, screenHeight / 2 };
         player._radius = 40.0f;
+
+        player.EnemyAmt = Balance::MaxEnemies(0);
+        spawner.SetLevel(0);
+        ResetShopCosts();
     }
+	
+	
+    // Called by SceneManager when this scene becomes active.
+    void OnEnter() override
+    {
+        // Lets the pause menu trigger a save without knowing about PlayScene.
+        ctx.saveGame = [this] { return Save(); };
+
+        // Set by the main menu's "Load Game" button.
+        if (ctx.loadOnStart)
+        {
+            ctx.loadOnStart = false;
+            Load();
+        }
+    }
+
+    // Clear the callback so the pause menu can't call into a destroyed scene.
+    void OnExit() override { ctx.saveGame = nullptr; }
 
     void Update(float dt) override
     {
-        if (IsKeyPressed(KEY_ESCAPE)) { scenes->Push<PauseScene>(ctx); return; }
-        if (IsKeyPressed(KEY_TAB)) { scenes->Push<ShopScene>(player); return; }
+        if (IsKeyPressed(KEY_ESCAPE) || Pad::Start()) { scenes->Push<PauseScene>(ctx); return; }
+        if (IsKeyPressed(KEY_TAB) || Pad::Back()) { scenes->Push<ShopScene>(player); return; }
         if (IsKeyPressed(KEY_F5)) Save();
         if (IsKeyPressed(KEY_F9)) Load();
+        if (IsKeyPressed(KEY_Q) || Pad::Bomb() && player.TryWaveClear()) WaveClear();
+        if (waveFx < 0.6f) waveFx += dt;
+        if (bannerTimer > 0.0f) bannerTimer -= dt;
+
 
         UpdateDeathParticles(deathParticles, dt);
 
@@ -73,9 +111,10 @@ public:
         player.HandleMovement(dt);
 
         // ----- Shooting -----
-        Vector2 mouse = GetMousePosition();
+        //Vector2 mouse = GetMousePosition();
+        Vector2 mouse = GetAimPoint();
 
-        if ((IsMouseButtonDown(MOUSE_LEFT_BUTTON) || IsKeyDown(KEY_SPACE)) &&
+        if ((IsMouseButtonDown(MOUSE_LEFT_BUTTON) || IsKeyDown(KEY_SPACE) || Pad::Fire()) &&
             fireTimer >= player.fireInterval)
         {
             player.StartBurst(fireTimer);
@@ -122,19 +161,11 @@ public:
         }
         else if (player.levelUp)
         {
-            int next = player.level + 1;
-            if (next % 5 == 0)
-            {
-                std::cout << "scaled" << std::endl;
-                spawner.ScaleAllEnemies(enemies, spawner);
-            }
-
-            if (next % 5 == 0)
-            {
-                spawner.SpawnMiniBoss();
-            }
-            
-            scenes->Push<LevelUpScene>(player, spawner, ctx.assets.font);
+            player.levelUp = false;
+            player.EnemyAmt = Balance::MaxEnemies(player.level);
+            spawner.SetLevel(player.level);
+            if (player.level % 5 == 0) spawner.SpawnMiniBoss();
+            bannerTimer = 1.5f;
         }
     }
 
@@ -209,14 +240,31 @@ public:
         DrawRectangle(highScoreX - 5, 5, textSize.x + 10, textSize.y + 8, BLACK);
 
         DrawTextEx(ctx.assets.font, highScoreText, { highScoreX, 9 }, highScoreFontSize, highScoreSpacing, GOLD);
+
+		// Draw HUD
+        Hud::Draw(player, ctx.assets.font);
+
+        if (waveFx < 0.6f)
+        {
+            float t = waveFx / 0.6f, r = t * 1500.0f;
+            DrawRing(waveFxPos, fmaxf(0.0f, r - 12.0f), r, 0.0f, 360.0f, 96, Fade(SKYBLUE, 1.0f - t));
+        }
+        if (bannerTimer > 0.0f)
+        {
+            const char* msg = TextFormat("LEVEL %d", player.level);
+            Vector2 ms = MeasureTextEx(ctx.assets.font, msg, 48, 2.0f);
+            DrawTextEx(ctx.assets.font, msg, { (screenWidth - ms.x) / 2.0f, 110.0f }, 48, 2.0f,
+                Fade(GOLD, fminf(1.0f, bannerTimer / 0.5f)));
+        }
     }
 
 private:
-    void Save()
+    bool Save()
     {
         const SaveResult r = SaveGame("save.json", player, enemies, bullets, enemyBullets, deathParticles, player.score);
         if (r) std::cout << "Game Saved" << std::endl;
         else std::cout << "Save Failed: " << r.message << std::endl;
+        return r.ok;
     }
 
     void Load()
@@ -228,6 +276,8 @@ private:
             gameOver = false;
             fireTimer = 0.0f;
             dmgTimer = DMG_INTERVAL;
+            player.EnemyAmt = Balance::MaxEnemies(player.level);
+            spawner.SetLevel(player.level);
             spawner.Reset(player.EnemyAmt);
             std::cout << "Game Loaded" << std::endl;
         }
@@ -235,6 +285,50 @@ private:
         {
             std::cout << "Load Failed: " << r.message << std::endl;
         }
+    }
+
+    void WaveClear()
+    {
+        for (auto& e : enemies)
+        {
+          if (!e.active) continue;
+
+          const bool isBoss = (e.type == EnemyType::MiniBossH || e.type == EnemyType::MiniBossSp);
+          if (isBoss)
+          {
+              e.Health -= e.maxHealth * 0.4f;
+              if (e.Health > 0.0f) continue;
+          }
+
+            SpawnDeathParticles(deathParticles, e.GetPos(), ctx.rng);
+            player.points += e.pointVal / 2;
+            e.active = false;
+        }
+         enemyBullets.clear();
+
+         PlaySound(ctx.assets.EnemyDeath);
+         spawner.Reset(player.EnemyAmt);
+
+         waveFx = 0.0f;                 // <-- these two start the animation
+         waveFxPos = player._pos;
+        
+    }
+
+    // Where the ship aims: the right stick if it was used last, otherwise the mouse.
+    Vector2 GetAimPoint()
+    {
+        if (Vector2Length(GetMouseDelta()) > 0.0f) usingPad = false;   // mouse moved: switch back
+
+        Vector2 aim = Pad::Aim();
+        if (aim.x != 0.0f || aim.y != 0.0f)
+        {
+            usingPad = true;
+            padAim = Vector2Normalize(aim);          // remembered, so the ship keeps facing there
+        }
+
+        if (usingPad)
+            return Vector2Add(player._pos, Vector2Scale(padAim, 300.0f));
+        return GetMousePosition();
     }
 
 };

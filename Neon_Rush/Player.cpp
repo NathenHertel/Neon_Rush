@@ -1,6 +1,7 @@
 #include "Player.h"
 #include "Assets.h"
 #include "Shop.h"
+#include "GamepadInput.h"
 
 void Player::setHealth(int damage)
 {
@@ -38,30 +39,57 @@ void Player::UpdateAim(Vector2 mousePos)
 	v3 = rot(o3);
 }
 
+void Player::TakeDamage(float dmg)
+{
+	if (dead || dmg <= 0.0f) return;
+
+	if (shield > 0.0f)
+	{
+		float absorbed = std::min(shield, dmg);
+		shield -= absorbed;
+		dmg -= absorbed;
+		if (shield <= 0.0001f)
+		{
+			shield = 0.0f;
+			shieldCooldownTimer = Balance::SHIELD_COOLDOWN;   // 60s recharge starts
+		}
+	}
+
+	if (dmg > 0.0f)
+	{
+		health -= dmg;
+		if (health <= 0.0f)
+		{
+			if (hasExtraLife) { health = maxHealth; hasExtraLife = false; }
+			else { health = 0.0f; dead = true; }
+		}
+	}
+}
+
+bool Player::TryWaveClear()
+{
+	if (waveCooldownTimer > 0.0f) return false;
+	waveCooldownTimer = Balance::WAVE_CLEAR_COOLDOWN;
+	return true;
+}
+
 void Player::PowerUpdate(float deltaTime)
 {
-	if (rapidFireActive)
+	// permanent buffs
+	fireInterval = std::max(Balance::MIN_FIRE_INTERVAL, baseFireInterval * powf(0.9f, (float)rapidLevel));
+	//shotCount = tripleShotActive ? 3 : 1;
+	shotCount = 1 + 2 * tripleLevel;
+
+	// shield recharge
+	if (shieldCooldownTimer > 0.0f)
 	{
-		rapidFireTimer -= deltaTime;
-		if (rapidFireTimer <= 0.0f)
-		{
-			rapidFireActive = false;
-			rapidFireTimer = 0.0f;
-		}
+		shieldCooldownTimer -= deltaTime;
+		if (shieldCooldownTimer <= 0.0f) { shieldCooldownTimer = 0.0f; shield = shieldMax; }
 	}
 
-	if (tripleShotActive)
-	{
-		tripleShotTimer -= deltaTime;
-		if (tripleShotTimer <= 0.0f)
-		{
-			tripleShotActive = false;
-			tripleShotTimer = 0.0f;
-		}
-	}
-
-	fireInterval = baseFireInterval * (rapidFireActive ? 0.5f : 1.0f);
-	shotCount = tripleShotActive ? 3 : 1;
+	// wave clear cooldown
+	if (waveCooldownTimer > 0.0f)
+		waveCooldownTimer = std::max(0.0f, waveCooldownTimer - deltaTime);
 }
 
 void Player::StartBurst(float& fireTimer)
@@ -97,7 +125,7 @@ void Player::UpdateShooting(Vector2 mousePos, std::vector<Bullet>& bullets, floa
 			for (int i = 0; i < shotCount; i++)
 			{
 				float offset = (i - (shotCount - 1) / 2.0f) * spread;
-				SpawnBullet(bullets, baseAngle + offset, 500.0f);
+				SpawnBullet(bullets, baseAngle + offset, 1200.0f);
 			}
 		}
 
@@ -140,6 +168,11 @@ void Player::HandleMovement(float deltaTime)
 	if (IsKeyDown(KEY_DOWN)) _pos.y += playerSpeed;
 	else if (IsKeyDown(KEY_S)) _pos.y += playerSpeed;
 
+	// ----- Left stick (analog: a light push moves slower) -----
+	Vector2 pad = Pad::Move();
+	_pos.x += pad.x * playerSpeed;
+	_pos.y += pad.y * playerSpeed;
+	
 	_pos.x = Clamp(_pos.x, _radius, screenWidth - _radius);
 	_pos.y = Clamp(_pos.y, _radius, screenHeight - _radius);
 }
@@ -149,6 +182,7 @@ void Player::SpawnBullet(std::vector<Bullet>& bullets, float angleRad, float spe
 	Bullet b;
 	b._pos = v1;                  // tip of the ship
 	b._radius = 5.0f;
+	b._colour = GREEN; // Set bullet color
 	b._vel = { cosf(angleRad) * speed, sinf(angleRad) * speed };
 	bullets.push_back(b);
 }
@@ -170,8 +204,12 @@ void Player::Reset()
 	points = 0;
 	rapidFireActive = false;
 	rapidFireTimer = 0.0f;
-	tripleShotActive = false;
+	//tripleShotActive = false;
+	tripleLevel = 0;
 	tripleShotTimer = 0.0f;
 	hasExtraLife = false;
 	playerSpeed = 10.0f;
+	dead = false; rapidLevel = 0;
+	shieldMax = Balance::SHIELD_BASE; shield = shieldMax;
+	shieldCooldownTimer = 0.0f; waveCooldownTimer = 0.0f;
 }

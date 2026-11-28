@@ -4,6 +4,7 @@
 #include "Config.h"
 #include "SceneManager.h"
 #include "GameContext.h"
+#include "GamepadInput.h"
 #include "PlayScene.h"
 
 // Overlay pushed by PlayScene. (was: `if (gameOver) { ... }`)
@@ -18,8 +19,8 @@ public:
 
     void Update(float) override
     {
-        if (IsKeyPressed(KEY_R)) ctx.startGame();
-        if (IsKeyPressed(KEY_M)) ctx.goToMenu();
+        if (IsKeyPressed(KEY_R) || Pad::A()) ctx.startGame();
+        if (IsKeyPressed(KEY_M) || Pad::B()) ctx.goToMenu();
     }
 
     void Render() override

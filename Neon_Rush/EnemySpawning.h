@@ -14,6 +14,14 @@ public:
 
 	void ScaleAllEnemies(std::vector<AI_Agent>& enemies, EnemySpawner& spawner);
 
+	int level = 0;
+	void SetLevel(int lvl)
+	{
+		level = lvl;
+		interval = Balance::SpawnInterval(lvl);
+		maxEnemies = Balance::MaxEnemies(lvl);
+	}
+
 	EnemySpawner() = default;
 	EnemySpawner(float interval, int maxEnemies);
 

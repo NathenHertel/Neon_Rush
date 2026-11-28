@@ -103,7 +103,7 @@ void AI_Agent::ShootAtPlayer(Vector2& targetPos, float deltaTime, std::vector<Bu
 
 	newBullet._pos = _Pos;
 	newBullet._radius = 5.0f;
-	newBullet._vel = Vector2Scale(direction, 300.0f);
+	newBullet._vel = Vector2Scale(direction, bulletSpeed);
 	newBullet.damage = damage;
 
 	EnemyBullets.push_back(newBullet);
@@ -125,6 +125,15 @@ void AI_Agent::Scaling()
 
 	minExp *= 1.01f;
 	maxExp *= 1.01f;
+}
+
+void AI_Agent::ApplyDifficulty(int level)
+{
+	Health *= Balance::EnemyHealthMul(level);
+	maxHealth = Health;
+	damage *= Balance::EnemyDamageMul(level);
+	bulletSpeed *= Balance::ProjectileSpeedMul(level);
+	shootInterval *= Balance::ShootIntervalMul(level);
 }
 
 void AI_Agent::SpeedAura(std::vector<AI_Agent>& Enemies)

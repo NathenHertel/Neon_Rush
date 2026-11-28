@@ -16,7 +16,7 @@ inline void ToggleFullscreenMode()
     else
     {
         ToggleFullscreen();
-        SetWindowSize(screenWidth, screenHeight);
+        SetWindowSize(windowWidth, windowHeight);
     }
 }
 

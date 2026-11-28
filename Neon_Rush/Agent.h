@@ -3,6 +3,7 @@
 #include "raylib.h"
 #include "raymath.h"
 #include "Projectile.h"
+#include "Balance.h"
 
 #include <cmath>
 #include <iostream>
@@ -32,6 +33,7 @@ public:
 	float expAmount{ 0 };
 	float shootTimer{ 1.5f };
 	float shootInterval{ 1.5f };
+	float bulletSpeed{ 180.0f };
 
 	// --- Integers ---
 	int pointVal = 0;
@@ -70,6 +72,7 @@ public:
 	void setHealth(float dmg);
 
 	void Scaling();
+	void ApplyDifficulty(int level);
 
 	void SpeedAura(std::vector<AI_Agent>& Enemies);
 	void HealthAura(std::vector<AI_Agent>& Enemies);

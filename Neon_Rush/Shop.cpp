@@ -2,7 +2,7 @@
 
 int chosenNum = 0;
 
-int itemCost[6] = { 250, 250, 350, 500, 500, 1000 };
+int itemCost[6] = { 300, 800, 250, 300, 250, 1200 };;
 
 void ApplyToPlayer(Player* player, int chosenNum)
 {
@@ -10,13 +10,25 @@ void ApplyToPlayer(Player* player, int chosenNum)
 
     switch (chosenNum)
     {
-    case 0: // Rapid Fire
+    case 0: // Rapid Fire (permanent, stacks)
         if (player->points >= itemCost[chosenNum])
         {
-            player->rapidFireActive = true;
-            player->rapidFireTimer = player->rapidFireDur;
+            player->rapidLevel++;
             player->points -= itemCost[chosenNum];
-            itemCost[chosenNum] *= 2;
+            itemCost[chosenNum] += 100;
+        }
+        break;
+
+    case 1: // Triple Shot (stacks up to 3 times: 3, 5, 7 shots)
+        if (player->tripleLevel < 3 && player->points >= itemCost[chosenNum])
+        {
+            player->tripleLevel++;
+            player->points -= itemCost[chosenNum];
+            itemCost[chosenNum] += 100;
+        }
+        else if (player->tripleLevel >= 3)
+        {
+            std::cout << "Triple Shot is maxed" << std::endl;
         }
         else
         {
@@ -24,26 +36,13 @@ void ApplyToPlayer(Player* player, int chosenNum)
         }
         break;
 
-    case 1: // Triple Shot
+    case 2: // Shield (more capacity)
         if (player->points >= itemCost[chosenNum])
         {
-            player->tripleShotActive = true;
-            player->tripleShotTimer = player->tripleShotDur;
+            player->shieldMax += Balance::SHIELD_PER_UPGRADE;
+            if (player->shield > 0.0f) player->shield += Balance::SHIELD_PER_UPGRADE;
             player->points -= itemCost[chosenNum];
-            itemCost[chosenNum] *= 2;
-        }
-        else
-        {
-            std::cout << "You dont have enough points" << std::endl;
-        }
-        break;
-
-    case 2: // Shield 
-        if (player->points >= itemCost[chosenNum])
-        {
-            player->shieldAmt += 1;
-            player->points -= itemCost[chosenNum];
-            itemCost[chosenNum] *= 2;
+            itemCost[chosenNum] += 100;
         }
         else
         {
@@ -54,9 +53,9 @@ void ApplyToPlayer(Player* player, int chosenNum)
     case 3: // Damage Boost
         if (player->points >= itemCost[chosenNum])
         {
-            player->damage *= 1.1f;
+            player->damage *= 1.5f;
             player->points -= itemCost[chosenNum];
-            itemCost[chosenNum] *= 2;
+            itemCost[chosenNum] += 100;
         }
         else
         {
@@ -66,9 +65,9 @@ void ApplyToPlayer(Player* player, int chosenNum)
     case 4: // Speed Boost
         if (player->points >= itemCost[chosenNum])
         {
-            player->playerSpeed *= 1.05f;
+            player->playerSpeed *= 1.5f;
             player->points -= itemCost[chosenNum];
-            itemCost[chosenNum] *= 2;
+            itemCost[chosenNum] +=100;
         }
         else
         {
@@ -80,7 +79,7 @@ void ApplyToPlayer(Player* player, int chosenNum)
         {
             player->hasExtraLife = true;
             player->points -= itemCost[chosenNum];
-            itemCost[chosenNum] *= 2;
+            itemCost[chosenNum] += 100;
         }
         else
         {
@@ -91,9 +90,18 @@ void ApplyToPlayer(Player* player, int chosenNum)
 
 }
 
-void DrawShop(Player* player, Vector2 mousePos, int screenWidth, int screenHeight)
+void ResetShopCosts()
+{
+    const int base[6] = { 300, 800, 250, 300, 250, 1200 };
+    for (int i = 0; i < 6; i++) itemCost[i] = base[i];
+}
+
+void DrawShop(Player* player, Vector2 mousePos, int screenWidth, int screenHeight, int selected)
 {
     DrawRectangle(0, 0, screenWidth, screenHeight, Fade(BLACK, 0.6f));
+
+    const char* pts = TextFormat("Points: %d", player->points);
+    DrawText(pts, (screenWidth - MeasureText(pts, 28)) / 2, 40, 28, GOLD);
 
     const int   COLS = 3;
     const int   COUNT = 6;
@@ -125,6 +133,7 @@ void DrawShop(Player* player, Vector2 mousePos, int screenWidth, int screenHeigh
         Rectangle button = { x + 20,  y + CARD_H - 50,    CARD_W - 40,  36 };
 
         DrawRectangleRec(card, DARKGRAY);
+        if (i == selected) DrawRectangleLinesEx(card, 4.0f, YELLOW);
 
         int tw = MeasureText(titles[i], 20);
         DrawText(titles[i],
